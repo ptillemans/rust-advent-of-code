@@ -1,7 +1,5 @@
 use std::str::FromStr;
 
-use itertools::iterate;
-
 const INPUT: &str = include_str!("../data/input.txt");
 
 #[derive(Debug, PartialEq, Eq)]
@@ -22,48 +20,59 @@ impl FromStr for InputModel {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(InputModel {
-            polymer: s.to_string()
+            polymer: s.trim().to_string()
         })
     }
 }
 
-fn is_reverse_polarity(a: char, b: char) -> bool {
-    (a.to_lowercase().next() == b.to_lowercase().next()) &&
-     (a.is_uppercase() && b.is_lowercase() || a.is_lowercase() && b.is_uppercase())
-}
-
-fn perform_reaction(polymer: &str) -> String {
-    let chars = polymer.chars().collect::<Vec<char>>();
-    let pair = chars.windows(2)
-        .filter(|cs| is_reverse_polarity(*cs.get(0).unwrap(), *cs.get(1).unwrap()))
-        .next();
-
-    match pair {
-        Some(cs) => {
-            let p: String = cs.into_iter().collect();
-            polymer.replacen(&p, "", 1)
-        }
-        _ => polymer.to_string()
+fn foldr<T,U>(mut xs: impl Iterator<Item=T>, init: U, f: fn(T, U) -> U) -> U {
+    match xs.next() {
+        None => init,
+        Some(x) => f(x, foldr(xs, init, f))
     }
 }
 
-
-fn part1(input: &InputModel) -> Result<String,AocError> {
-    iterate(input.polymer.to_owned(), |s| perform_reaction(&s))
-        .scan("".to_string(), |last, new| 
-            if *last == new { 
-                None
-            } else {
-                *last = new.to_owned(); 
-                Some(new)
-            })
-        .last()
-        .map(|s| s.len().to_string())
-        .ok_or(AocError::NoSolution)
+fn toggle_char(c: char) -> char {
+     match c {
+        c if c.is_lowercase() => c.to_uppercase().next().unwrap(),
+        c if c.is_uppercase() => c.to_lowercase().next().unwrap(),
+        c => c
+    }
 }
 
-fn part2(_input: &InputModel) -> Result<String, AocError> {
-    return Ok("Not implemented".to_string())
+fn react_head(c: char, s: String) -> String {
+    if s.is_empty() {
+        return c.to_string()
+    }
+    
+    if s.starts_with(toggle_char(c)) {
+        s[1..].to_string()
+    } else {
+        c.to_string() + &s
+    }.to_string()
+}
+
+fn perform_reaction(input: &str) -> String {
+    foldr(input.chars(), "".to_string(), react_head)
+}
+
+fn part1(input: &InputModel) -> Result<String, AocError> {
+    let result = perform_reaction(&input.polymer);
+    Ok(result.len().to_string())
+}
+
+fn part2(input: &InputModel) -> Result<String, AocError> {
+    let base_polymer = input.polymer.to_owned();
+    let minimal_length = ('a'..='z')
+        .map(|c| base_polymer
+             .replace(c, "")
+             .replace(c.to_uppercase().next().unwrap(), ""))
+        .map(|polymer| perform_reaction(&polymer).len())
+        .min();
+        
+    minimal_length
+        .map(|n| n.to_string())
+        .ok_or(AocError::NoSolution)
 }
 
 fn main() -> Result<(), AocError> {
@@ -107,46 +116,10 @@ mod tests {
     #[test]
     fn test_part2() {
         let actual = part2(&input_data()).unwrap();
-        let expected = "";
+        let expected = "4";
 
         assert_eq!(actual, expected);
     }
 
-    const REACTION_DATA: &[(&str, &str)] = &[
-        ("aA", ""),
-        ("Aa", ""),
-        ("aa", "aa"),
-        ("AA", "AA"),
-        ("aBbA", "aA"),
-        ("abAB", "abAB"),
-        ("aabAAB", "aabAAB"),
-    ];
-
-    #[test]
-    fn test_perform_reaction() {
-        for (input, expected) in REACTION_DATA {
-            let actual = perform_reaction(input);
-            assert_eq!(&actual, expected);
-        }
-    }
-
-    const REACTION_STEPS: &[&str] = &[
-        "dabAcCaCBAcCcaDA",
-        "dabAaCBAcCcaDA",
-        "dabCBAcCcaDA",
-        "dabCBAcaDA",
-        "dabCBAcaDA",
-    ];
-
-    #[test]
-    fn test_perform_reaction_steps() {
-        let steps = REACTION_STEPS.iter()
-            .zip(REACTION_STEPS[1..].iter());
-        for (input, expected) in steps {
-            println!("{} {}", input, expected);
-           assert_eq!(perform_reaction(input), *expected)
-        }
-    }
-
-
 }
+
