@@ -8,5 +8,4 @@ edition = "2021"
 [dependencies]
 thiserror="*"
 nom="*"
-itertools="*"
 time = { version = "0.3", features = ["macros", "parsing"] }
