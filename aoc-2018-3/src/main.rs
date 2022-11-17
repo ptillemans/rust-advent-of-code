@@ -1,5 +1,3 @@
-mod parsers;
-
 use aoc_2018_3::Rectangle;
 use aoc_2018_3::{AocError, InputModel};
 
