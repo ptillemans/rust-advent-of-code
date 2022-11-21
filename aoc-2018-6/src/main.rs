@@ -25,10 +25,23 @@ fn main() -> Result<(), AocError> {
 mod tests {
     use super::*;
     
-    const TEST_INPUT: &str = "";
+    const TEST_INPUT: &str = "1, 1
+1, 6
+8, 3
+3, 4
+5, 5
+8, 9";
 
     pub fn input_data() -> InputModel {
         InputModel {
+          points: vec![
+            (1, 1),
+            (1, 6),
+            (8, 3),
+            (3, 4),
+            (5, 5),
+            (8, 9),
+          ]
         }
     }
 
