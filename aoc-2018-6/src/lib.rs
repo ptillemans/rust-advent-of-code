@@ -25,18 +25,19 @@ fn parse_line(s: &str) -> Result<(i32, i32), AocError> {
 }
 
 
+
 impl FromStr for InputModel {
     type Err = AocError;
 
-    fn from_str(_s: &str) -> Result<Self, Self::Err> {
-        let points = _s.lines().map(parse_line).collect::<Result<Vec<_>, _>>()?;
-        Ok(InputModel { points })
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        s.lines()
+            .map(parse_line)
+            .collect::<Result<Vec<(i32, i32)>, AocError>>()
+            .map(|points| InputModel { points })
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-
 }
