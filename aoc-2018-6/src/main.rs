@@ -2,7 +2,6 @@ use aoc_2018_6::{AocError, InputModel};
 
 const INPUT: &str = include_str!("../data/input.txt");
 
-
 fn part1(_input: &InputModel) -> Result<String,AocError> {
     return Ok("Not implemented".to_string())
 }
