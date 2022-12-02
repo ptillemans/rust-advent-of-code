@@ -57,7 +57,6 @@ pub fn score(player1: Play, player2: Play) -> i32 {
 
 pub fn play_for_outcome(play: Play, outcome: Outcome) -> Play {
     let response = (2 + play as i32 + outcome as i32) % 3;
-    println!("{} {} {}", play as i32, outcome as i32, response);
     match response {
         0 => Play::Rock,
         1 => Play::Paper,
