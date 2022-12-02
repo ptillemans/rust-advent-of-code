@@ -5,15 +5,15 @@ const INPUT: &str = include_str!("../data/input.txt");
 
 
 fn part1(_input: &InputModel) -> Result<String,AocError> {
-    let player2_mapping = phf_map![
-        'X' => Play::Rock,
-        'Y' => Play::Paper,
-        'Z' => Play::Scissors,
-    ];
     let player1_mapping = phf_map![
         'A' => Play::Rock,
         'B' => Play::Paper,
         'C' => Play::Scissors,
+    ];
+    let player2_mapping = phf_map![
+        'X' => Play::Rock,
+        'Y' => Play::Paper,
+        'Z' => Play::Scissors,
     ];
     let score: i32 = _input.plays.iter()
         .filter_map(|(player1, player2)| {
@@ -28,15 +28,15 @@ fn part1(_input: &InputModel) -> Result<String,AocError> {
 }
 
 fn part2(_input: &InputModel) -> Result<String, AocError> {
-    let outcome_mapping = phf_map![
-        'X' => Outcome::Lose,
-        'Y' => Outcome::Draw,
-        'Z' => Outcome::Win,
-    ];
     let player1_mapping = phf_map![
         'A' => Play::Rock,
         'B' => Play::Paper,
         'C' => Play::Scissors,
+    ];
+    let outcome_mapping = phf_map![
+        'X' => Outcome::Lose,
+        'Y' => Outcome::Draw,
+        'Z' => Outcome::Win,
     ];
     let score: i32 = _input.plays.iter()
         .filter_map(|(player1, player2)| {
