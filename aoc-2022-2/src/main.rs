@@ -1,3 +1,4 @@
+#![feature(test)]
 use aoc_2022_2::{AocError, InputModel, Play, score, play_for_outcome, Outcome};
 use phf::phf_map;
 
@@ -63,7 +64,9 @@ fn main() -> Result<(), AocError> {
 
 #[cfg(test)]
 mod tests {
+    extern crate test;
     use super::*;
+    use test::Bencher;
 
     const TEST_INPUT: &str = "A Y
 B X
@@ -97,5 +100,15 @@ C Z";
         let expected = "12";
 
         assert_eq!(actual, expected);
+    }
+    
+    #[bench]
+    fn bench_part1(b: &mut Bencher) {
+        b.iter(|| part1(&input_data()))
+    }
+
+    #[bench]
+    fn bench_part2(b: &mut Bencher) {
+        b.iter(|| part2(&input_data()))
     }
 }
