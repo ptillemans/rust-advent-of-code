@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use nom::{IResult, bytes::complete::tag, sequence::tuple, combinator::map_res, character::complete::{digit1, newline, line_ending, anychar}, branch::alt, multi::{separated_list1, many_till}, error::ErrorKind};
+use nom::{IResult, Parser, bytes::complete::tag, sequence::tuple, combinator::map_res, character::complete::{digit1, newline, line_ending, anychar}, branch::alt, multi::{separated_list1, many_till}};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct InputModel  {
@@ -111,21 +111,24 @@ impl Stacks {
     }
 
     fn parse(input: &str) -> IResult<&str, Stacks>{
-        let (rest, stack_lines) = separated_list1(newline, Stacks::parse_stack_line)(input)?;
-        let width = stack_lines.iter().map(|s| s.len()).max().unwrap();
-        let mut stacks = vec![Stack::new(); width];
-        for stack_line in stack_lines.iter().rev() {
-            for (i, crate_) in stack_line.into_iter().enumerate() {
-                if let Some(c) = crate_ {
-                    stacks[i].push(*c);
+        tuple((
+            separated_list1(newline, Stacks::parse_stack_line),
+            line_ending,
+            many_till(anychar, line_ending)
+        ))
+        .map(|(stack_lines, _, _)| {
+            let width = stack_lines.iter().map(|s| s.len()).max().unwrap();
+            let mut stacks = vec![Stack::new(); width];
+            for stack_line in stack_lines.iter().rev() {
+                for (i, crate_) in stack_line.into_iter().enumerate() {
+                    if let Some(c) = crate_ {
+                        stacks[i].push(*c);
+                    }
                 }
             }
-        }
-        // eat the newline
-        let (rest, _) = line_ending::<_, (_, ErrorKind)>(rest).unwrap();
-        // skip column names
-        let (rest, _) = many_till::<_, _, _, (_, ErrorKind), _, _>(anychar, line_ending)(rest).unwrap();
-        Ok((rest, Stacks(stacks)))
+            Stacks(stacks)
+        })
+        .parse(input)
     }
 
     fn parse_stack_line(line: &str) -> IResult<&str, Vec<Option<Crate>>> {
