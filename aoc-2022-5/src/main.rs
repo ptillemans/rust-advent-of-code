@@ -1,5 +1,4 @@
 #![feature(test)]
-extern crate test;
 use aoc_2022_5::{AocError, InputModel, Crate};
 
 const INPUT: &str = include_str!("../data/input.txt");
@@ -40,6 +39,7 @@ fn main() -> Result<(), AocError> {
 
 #[cfg(test)]
 mod tests {
+    extern crate test;
     use aoc_2022_5::{Moves, Stacks, Move, Stack};
 
     use super::*;
@@ -95,6 +95,11 @@ move 1 from 1 to 2";
         assert_eq!(actual, expected);
     }
     
+    #[bench]
+    fn bench_parse(b: &mut Bencher) {
+        b.iter(|| TEST_INPUT.parse::<InputModel>())
+    }
+
     #[bench]
     fn bench_part1(b: &mut Bencher) {
         b.iter(|| part1(&input_data()))
