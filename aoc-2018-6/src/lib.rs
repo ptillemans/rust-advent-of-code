@@ -38,6 +38,7 @@ impl FromStr for InputModel {
 }
 
 // represent points on the grid
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum Cell {
     Empty,
     Hazard(i32, i32),
@@ -68,7 +69,7 @@ fn bounding_box(points: &Vec<(i32, i32)>) -> ((i32, i32), (i32, i32)) {
     ((min_x, min_y), (max_x,  max_y))
 }
 
-fn fill_grid(points: &Vec<(i32, i32)>) {
+fn fill_grid(points: &Vec<(i32, i32)>) -> Vec<Vec<Cell>> {
     let ((min_x, min_y), (max_x, max_y)) = bounding_box(points);
     let mut grid = vec![vec![Cell::Empty; (max_x - min_x + 3) as usize]; (max_y - min_y + 3) as usize];
     for (x, y) in points {
@@ -99,7 +100,8 @@ fn fill_grid(points: &Vec<(i32, i32)>) {
             print!("{:?}", grid[y as usize][x as usize]);
         }
         println!();
-    }
+    };
+    grid
 }
 #[cfg(test)]
 mod tests {
@@ -135,7 +137,7 @@ mod tests {
                 if x == 1 && y == 1 {
                     assert_eq!(grid[x][y], Cell::Hazard(0, 0));
                 } else {
-                    assert_eq!(grid[x][y], Cell::RiskLevel(abs(x-1)+abs(y-1), (1, 1)));
+                    assert_eq!(grid[x][y], Cell::RiskLevel((x as i32 - 1).abs()+(y as i32 - 1).abs(), (1, 1)));
                 }
             }
         }
