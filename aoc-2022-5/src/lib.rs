@@ -111,7 +111,7 @@ impl Stacks {
     }
 
     fn parse(input: &str) -> IResult<&str, Stacks>{
-        let (rest, stack_lines) = separated_list1(newline, Stacks::parse_stack_line)(input).unwrap();
+        let (rest, stack_lines) = separated_list1(newline, Stacks::parse_stack_line)(input)?;
         let width = stack_lines.iter().map(|s| s.len()).max().unwrap();
         let mut stacks = vec![Stack::new(); width];
         for stack_line in stack_lines.iter().rev() {
@@ -154,7 +154,7 @@ impl Stacks {
         Ok(stacks[i-1].push(c))
     }
 
-    pub fn apply_move(&mut self, m: Move) -> Result<(), AocError> {
+    pub fn apply_move_9000(&mut self, m: Move) -> Result<(), AocError> {
         let Move { amount, from, to } = m;
         
         for _ in 0..amount {
@@ -396,7 +396,7 @@ move 2 from 1 to 2").unwrap();
             Stack(vec![Crate('P')]),
         ]);
         let m = Move{amount: 2, from: 2, to: 3};
-        stacks.apply_move(m).unwrap();
+        stacks.apply_move_9000(m).unwrap();
         let expected = Stacks(vec![
             Stack(vec![Crate('Z'), Crate('N')]),
             Stack(vec![Crate('M')]),
@@ -413,7 +413,7 @@ move 2 from 1 to 2").unwrap();
             Stack(vec![Crate('P')]),
         ]);
         let m = Move{amount: 2, from: 2, to: 3};
-        stacks.apply_move(m).unwrap();
+        stacks.apply_move_9000(m).unwrap();
         let expected = Stacks(vec![
             Stack(vec![Crate('Z'), Crate('N')]),
             Stack(vec![]),

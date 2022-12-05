@@ -7,7 +7,7 @@ fn part1(input: &InputModel) -> Result<String,AocError> {
     let mut stacks = input.stacks.clone();
     let moves = input.moves.clone();
     moves.into_iter()
-        .map(|m| stacks.apply_move(m))
+        .map(|m| stacks.apply_move_9000(m))
         .collect::<Result<Vec<_>,_>>()?;
     
     stacks.heads().iter()
