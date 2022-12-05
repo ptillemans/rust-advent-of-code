@@ -1,3 +1,4 @@
+#![feature(test)]
 use aoc_2022_4::{AocError, InputModel, contains, overlap};
 
 const INPUT: &str = include_str!("../data/input.txt");
@@ -29,7 +30,9 @@ fn main() -> Result<(), AocError> {
 
 #[cfg(test)]
 mod tests {
+    extern crate test;
     use super::*;
+    use test::Bencher;
 
     const TEST_INPUT: &str = "2-4,6-8
 2-3,4-5
@@ -73,5 +76,15 @@ mod tests {
         let expected = "4";
 
         assert_eq!(actual, expected);
+    }
+    
+    #[bench]
+    fn bench_part1(b: &mut Bencher) {
+        b.iter(|| part1(&input_data()))
+    }
+
+    #[bench]
+    fn bench_part2(b: &mut Bencher) {
+        b.iter(|| part2(&input_data()))
     }
 }

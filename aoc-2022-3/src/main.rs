@@ -1,3 +1,4 @@
+#![feature(test)]
 use aoc_2022_3::{AocError, InputModel, priority};
 
 const INPUT: &str = include_str!("../data/input.txt");
@@ -39,7 +40,9 @@ fn main() -> Result<(), AocError> {
 
 #[cfg(test)]
 mod tests {
+    extern crate test;
     use super::*;
+    use test::Bencher;
     use aoc_2022_3::TEST_INPUT;
 
     pub fn input_data() -> InputModel {
@@ -68,5 +71,15 @@ mod tests {
         let expected = "70";
 
         assert_eq!(actual, expected);
+    }
+
+    #[bench]
+    fn bench_part1(b: &mut Bencher) {
+        b.iter(|| part1(&input_data()))
+    }
+
+    #[bench]
+    fn bench_part2(b: &mut Bencher) {
+        b.iter(|| part2(&input_data()))
     }
 }
