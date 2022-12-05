@@ -1,3 +1,5 @@
+#![feature(test)]
+extern crate test;
 use aoc_2022_5::{AocError, InputModel, Crate};
 
 const INPUT: &str = include_str!("../data/input.txt");
@@ -9,10 +11,9 @@ fn part1(input: &InputModel) -> Result<String,AocError> {
     moves.into_iter()
         .map(|m| stacks.apply_move_9000(m))
         .collect::<Result<Vec<_>,_>>()?;
-    
     stacks.heads().iter()
-       .map(|c| c.map(Crate::to_char).ok_or(AocError::NoSolution))
-       .collect()
+        .map(|c| c.map(Crate::to_char).ok_or(AocError::NoSolution))
+        .collect()
 }
     
 
@@ -23,8 +24,8 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
         .map(|m| stacks.apply_move_9001(m))
         .collect::<Result<Vec<_>,_>>()?;
     stacks.heads().iter()
-       .map(|c| c.map(Crate::to_char).ok_or(AocError::NoSolution))
-       .collect()
+        .map(|c| c.map(Crate::to_char).ok_or(AocError::NoSolution))
+        .collect()
 }
 
 fn main() -> Result<(), AocError> {
@@ -42,6 +43,7 @@ mod tests {
     use aoc_2022_5::{Moves, Stacks, Move, Stack};
 
     use super::*;
+    use test::Bencher;
 
     const TEST_INPUT: &str = "    [D]    
 [N] [C]    
@@ -91,5 +93,15 @@ move 1 from 1 to 2";
         let expected = "MCD";
 
         assert_eq!(actual, expected);
+    }
+    
+    #[bench]
+    fn bench_part1(b: &mut Bencher) {
+        b.iter(|| part1(&input_data()))
+    }
+
+    #[bench]
+    fn bench_part2(b: &mut Bencher) {
+        b.iter(|| part2(&input_data()))
     }
 }
