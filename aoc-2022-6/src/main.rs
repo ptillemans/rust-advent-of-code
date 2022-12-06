@@ -63,6 +63,11 @@ mod tests {
     }
     
     #[bench]
+    fn bench_parse(b: &mut Bencher) {
+        b.iter(||INPUT.parse::<InputModel>());
+    }
+
+    #[bench]
     fn bench_part1(b: &mut Bencher) {
         b.iter(|| part1(&input_data()))
     }
