@@ -1,15 +1,17 @@
 #![feature(test)]
-use aoc_2022_6::{AocError, InputModel};
+use aoc_2022_6::{AocError, InputModel, find_packet_start};
 
 const INPUT: &str = include_str!("../data/input.txt");
 
 
-fn part1(_input: &InputModel) -> Result<String,AocError> {
-    return Ok("Not implemented".to_string())
+fn part1(input: &InputModel) -> Result<String,AocError> {
+    find_packet_start(&input.datastream, 4)
+        .map(|pos| pos.to_string())
 }
 
-fn part2(_input: &InputModel) -> Result<String, AocError> {
-    return Ok("Not implemented".to_string())
+fn part2(input: &InputModel) -> Result<String, AocError> {
+    find_packet_start(&input.datastream, 14)
+        .map(|pos| pos.to_string())
 }
 
 fn main() -> Result<(), AocError> {
@@ -28,10 +30,11 @@ mod tests {
     use super::*;
     use test::Bencher;
 
-    const TEST_INPUT: &str = "";
+    const TEST_INPUT: &str = "mjqjpqmgbljsphdztnvjfqwrcgsmlb";
 
     pub fn input_data() -> InputModel {
         InputModel {
+            datastream: TEST_INPUT.to_owned(),
         }
     }
 
@@ -46,7 +49,7 @@ mod tests {
     #[test]
     fn test_part1() {
         let actual = part1(&input_data()).unwrap();
-        let expected = "";
+        let expected = "7";
 
         assert_eq!(actual, expected);
     }
@@ -54,7 +57,7 @@ mod tests {
     #[test]
     fn test_part2() {
         let actual = part2(&input_data()).unwrap();
-        let expected = "";
+        let expected = "19";
 
         assert_eq!(actual, expected);
     }
