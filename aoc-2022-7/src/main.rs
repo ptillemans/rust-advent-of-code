@@ -4,8 +4,15 @@ use aoc_2022_7::*;
 const INPUT: &str = include_str!("../data/input.txt");
 
 
-fn part1(_input: &InputModel) -> Result<String,AocError> {
-    return Ok("Not implemented".to_string())
+fn part1(input: &InputModel) -> Result<String,AocError> {
+    let mut shell = Shell::new();
+    shell.execute(input.commands.clone())?;
+    let solution: usize = shell.flat_node_list().into_iter()
+        .filter(|node| node.is_dir())
+        .map(|node| node.total_size())
+        .filter(|size| *size <= 100000)
+        .sum();
+    Ok(solution.to_string())
 }
 
 fn part2(_input: &InputModel) -> Result<String, AocError> {
@@ -58,34 +65,49 @@ $ ls
             commands: vec![
                 Command::CDROOT,
                 Command::LS(vec![
-                    FileSystemNode::Directory{name: "a".to_string(), contents: vec![]},
-                    FileSystemNode::File{name: "b.txt".to_string(), size: 14848514},
-                    FileSystemNode::File{name: "c.dat".to_string(), size: 8504156},
-                    FileSystemNode::Directory{name: "d".to_string(), contents: vec![]},
+                    FileSystemNode::new_dir("a", vec![]),
+                    FileSystemNode::new_file("b.txt", 14848514),
+                    FileSystemNode::new_file("c.dat", 8504156),
+                    FileSystemNode::new_dir("d", vec![]),
                 ]),
                 Command::CD("a".to_string()),
                 Command::LS(vec![
-                    FileSystemNode::Directory{name: "e".to_string(), contents: vec![]},
-                    FileSystemNode::File{name: "f".to_string(), size: 29116},
-                    FileSystemNode::File{name: "g".to_string(), size: 2557},
-                    FileSystemNode::File{name: "h.lst".to_string(), size: 62596},
+                    FileSystemNode::new_dir("e", vec![]),
+                    FileSystemNode::new_file("f", 29116),
+                    FileSystemNode::new_file("g", 2557),
+                    FileSystemNode::new_file("h.lst", 62596),
                 ]),
                 Command::CD("e".to_string()),
                 Command::LS(vec![
-                    FileSystemNode::File{name: "i".to_string(), size: 584},
+                    FileSystemNode::new_file("i", 584),
                 ]),
                 Command::CDUP,
                 Command::CDUP,
                 Command::CD("d".to_string()),
                 Command::LS(vec![
-                    FileSystemNode::File{name: "j".to_string(), size: 4060174},
-                    FileSystemNode::File{name: "d.log".to_string(), size: 8033020},
-                    FileSystemNode::File{name: "d.ext".to_string(), size: 5626152},
-                    FileSystemNode::File{name: "k".to_string(), size: 7214296},
+                    FileSystemNode::new_file("j", 4060174),
+                    FileSystemNode::new_file("d.log", 8033020),
+                    FileSystemNode::new_file("d.ext", 5626152),
+                    FileSystemNode::new_file("k", 7214296),
                 ]),
             ]
         }
     }
+
+    const FS_OUTPUT: &str = "- / (dir)
+  - a (dir)
+    - e (dir)
+      - i (file, size=584)
+    - f (file, size=29116)
+    - g (file, size=2557)
+    - h.lst (file, size=62596)
+  - b.txt (file, size=14848514)
+  - c.dat (file, size=8504156)
+  - d (dir)
+    - j (file, size=4060174)
+    - d.log (file, size=8033020)
+    - d.ext (file, size=5626152)
+    - k (file, size=7214296)";
 
     #[test]
     fn test_parse() {
@@ -96,9 +118,18 @@ $ ls
     }
 
     #[test]
+    fn test_file_system() {
+        let mut shell = Shell::new();
+        shell.execute(input_data().commands.clone()).unwrap();
+        let actual = shell.get_root().format_with_indent("");
+        println!("{}", actual);
+        assert_eq!(actual, FS_OUTPUT);
+    }
+
+    #[test]
     fn test_part1() {
         let actual = part1(&input_data()).unwrap();
-        let expected = "";
+        let expected = "95437";
 
         assert_eq!(actual, expected);
     }
