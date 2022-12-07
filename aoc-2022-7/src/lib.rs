@@ -68,13 +68,6 @@ impl FileSystemNode {
         }
     }
     
-    fn get_contents(&self) -> Result<Vec<FileSystemNode>, AocError> {
-        match self.node_type {
-            NodeType::File(_) => Err(AocError::IllegalState),
-            NodeType::Directory(ref contents) => Ok(contents.to_vec()),
-        }
-    }
-
     pub fn total_size(&self) -> usize {
         match self.node_type {
             NodeType::File(size) => size,
@@ -147,12 +140,12 @@ impl FileSystemNode {
 
     fn flat_list(&self) -> Vec<FileSystemNode> {
         match self.node_type {
-            NodeType::File(_) => dbg!(vec![self.clone()]),
+            NodeType::File(_) => vec![self.clone()],
             NodeType::Directory(ref contents) => {
-                dbg!(vec![self.clone()].into_iter()
+                vec![self.clone()].into_iter()
                      .chain(contents.iter()
                         .flat_map(|node| node.flat_list()))
-                     .collect())
+                     .collect()
             }
         }
     }
@@ -261,7 +254,7 @@ impl Shell {
 
     pub fn execute(&mut self, commands: Vec<Command>) -> Result<(), AocError> {
         for command in commands {
-            dbg!(self.execute_command(command))?;
+            self.execute_command(command)?;
         }
         Ok(())
     }
@@ -277,10 +270,6 @@ impl Shell {
             Command::CDROOT => self.cdroot(),
             Command::LS(contents) => self.ls(contents),
         }
-    }
-
-    fn cur_dir(&self) -> String {
-        self.path.join("/")
     }
 
     fn cd(&mut self, name: &str) -> Result<(), AocError> {
@@ -313,8 +302,6 @@ impl Shell {
         let path = self.path.clone();
         self.get_path_mut(&path)
             .and_then(|node| node.set_contents(contents))?;
-        println!("ls new path: {:?}", self.path);
-        println!("ls filesystem: {}", self.get_root().format_with_indent(""));
         Ok(())
     }
 }
@@ -340,8 +327,6 @@ $ cd a";
             FileSystemNode::new_dir("d", vec![]),
         ];
 
-        println!("rest: {}", rest);
-        println!("actual: {:?}", actual);
         assert_eq!(rest, "\n$ cd a");
         assert_eq!(actual, expected);
     }
@@ -362,8 +347,6 @@ $ cd a";
             FileSystemNode::new_dir("d", vec![]),
         ]);
 
-        println!("rest: {}", rest);
-        println!("actual: {:?}", actual);
         assert_eq!(rest, "\n$ cd a");
         assert_eq!(actual, expected);
     }
@@ -375,8 +358,6 @@ $ ls";
         let (rest, actual) = command(input).unwrap();
         let expected = Command::CD("a".to_string());
 
-        println!("rest: {}", rest);
-        println!("actual: {:?}", actual);
         assert_eq!(rest, "\n$ ls");
         assert_eq!(actual, expected);
     }
@@ -388,8 +369,6 @@ $ ls";
         let (rest, actual) = command(input).unwrap();
         let expected = Command::CDUP;
 
-        println!("rest: {}", rest);
-        println!("actual: {:?}", actual);
         assert_eq!(rest, "\n$ ls");
         assert_eq!(actual, expected);
     }
@@ -547,9 +526,6 @@ $ ls";
             Command::CD("a".to_string()),
             Command::LS(test_content2.clone()),
         ]).unwrap();
-
-        println!("shell: {:?}", shell);
-        println!("actual: {:?}", shell.flat_node_list());
 
         assert_eq!(shell.flat_node_list(), expected_list);
     }
