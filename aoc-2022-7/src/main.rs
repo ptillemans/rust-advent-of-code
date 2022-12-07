@@ -15,8 +15,23 @@ fn part1(input: &InputModel) -> Result<String,AocError> {
     Ok(solution.to_string())
 }
 
-fn part2(_input: &InputModel) -> Result<String, AocError> {
-    return Ok("Not implemented".to_string())
+const VOLUME_SIZE: usize = 70000000;
+const UPGRADE_SIZE: usize = 30000000;
+
+fn part2(input: &InputModel) -> Result<String, AocError> {
+    let mut shell = Shell::new();
+    shell.execute(input.commands.clone())?;
+    let total_size = shell.get_root().total_size();
+    let needed_space = total_size + UPGRADE_SIZE - VOLUME_SIZE;
+
+    let solution = shell.flat_node_list().into_iter()
+        .filter(|node| node.is_dir())
+        .map(|node| node.total_size())
+        .filter(|size| *size >= needed_space)
+        .min()
+        .ok_or(AocError::NoSolution)?;
+
+   return Ok(solution.to_string())
 }
 
 fn main() -> Result<(), AocError> {
@@ -122,7 +137,6 @@ $ ls
         let mut shell = Shell::new();
         shell.execute(input_data().commands.clone()).unwrap();
         let actual = shell.get_root().format_with_indent("");
-        println!("{}", actual);
         assert_eq!(actual, FS_OUTPUT);
     }
 
@@ -137,7 +151,7 @@ $ ls
     #[test]
     fn test_part2() {
         let actual = part2(&input_data()).unwrap();
-        let expected = "";
+        let expected = "24933642";
 
         assert_eq!(actual, expected);
     }
