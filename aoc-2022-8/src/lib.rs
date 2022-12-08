@@ -29,9 +29,15 @@ fn max<T:Ord> (a: T, b:T) -> T {
     }
 }
 
-pub fn find_visible(trees: &Vec<Vec<char>>) -> Vec<Vec<bool>> {
+fn bounds(trees: &Vec<Vec<char>>) -> (usize, usize) {
     let l = trees.len();
     let w = trees[0].len();
+    (l, w)
+}
+
+pub fn find_visible(trees: &Vec<Vec<char>>) -> Vec<Vec<bool>> {
+
+    let (l, w) = bounds(trees);
 
     let mut visible = vec![vec![false; w]; l];
 
@@ -79,6 +85,43 @@ pub fn find_visible(trees: &Vec<Vec<char>>) -> Vec<Vec<bool>> {
     visible
 }
 
+fn scenic_score(trees: &Vec<Vec<char>>, pos: (usize, usize)) -> usize {
+    let (l, w) = bounds(trees);
+    let (x, y) = pos;
+    let height = trees[x][y];
+    let mut north_count = 1;
+    let mut south_count = 1;
+    let mut east_count = 1;
+    let mut west_count = 1;
+    for j in (0..y-1).rev() {
+        if height <= trees[x][j] {
+            break;
+        }
+        north_count += 1;
+    }
+    for j in y+1..w {
+        if height <= trees[x][j] {
+            break;
+        }
+        south_count += 1;
+    }
+    for i in x+1..l {
+        if height <= trees[i][y] {
+            break;
+        }
+        east_count += 1;
+    }
+    for i in (x-1..0).rev() {
+        if height <= trees[i][y] {
+            break;
+        }
+        west_count += 1;
+    }
+    println!("{} {} {} {}", north_count, south_count, east_count, west_count);
+    return north_count * south_count * east_count * west_count
+}
+
+
 #[cfg(test)]
 mod tests {
 
@@ -108,4 +151,12 @@ mod tests {
         ];
         assert_eq!(actual, expected)
     }
+
+    #[test]
+    pub fn test_scenic_score_1_2() {
+        let actual = scenic_score(&input_data().trees, (1,2));
+        let expected = 4;
+        assert_eq!(actual, expected)
+    }
+
 }
