@@ -1,5 +1,5 @@
 #![feature(test)]
-use aoc_2022_8::{AocError, InputModel, find_visible};
+use aoc_2022_8::{AocError, InputModel, find_visible, scenic_score, bounds};
 
 const INPUT: &str = include_str!("../data/input.txt");
 
@@ -12,8 +12,16 @@ fn part1(input: &InputModel) -> Result<String,AocError> {
         .to_string())
 }
 
-fn part2(_input: &InputModel) -> Result<String, AocError> {
-    return Ok("Not implemented".to_string())
+fn part2(input: &InputModel) -> Result<String, AocError> {
+    let trees = &input.trees;
+    let (w, l) = bounds(trees);
+
+    let best_scenic_score = (0..w).into_iter()
+        .flat_map(|x| (0..l).into_iter().map(move |y| (x, y)))
+        .map(|(x, y)| scenic_score(trees, (x, y)))
+        .max()
+        .map(|x| x.to_string());
+    best_scenic_score.ok_or(AocError::NoSolution)
 }
 
 fn main() -> Result<(), AocError> {
@@ -69,7 +77,7 @@ mod tests {
     #[test]
     fn test_part2() {
         let actual = part2(&input_data()).unwrap();
-        let expected = "";
+        let expected = "8";
 
         assert_eq!(actual, expected);
     }

@@ -9,6 +9,8 @@ pub struct InputModel  {
 pub enum AocError {
     #[error("Error parsing the input")]
     ParseError,
+    #[error("No solution found")]
+    NoSolution,
 }
         
 impl FromStr for InputModel {
@@ -29,7 +31,7 @@ fn max<T:Ord> (a: T, b:T) -> T {
     }
 }
 
-fn bounds(trees: &Vec<Vec<char>>) -> (usize, usize) {
+pub fn bounds(trees: &Vec<Vec<char>>) -> (usize, usize) {
     let l = trees.len();
     let w = trees[0].len();
     (l, w)
@@ -45,7 +47,6 @@ pub fn find_visible(trees: &Vec<Vec<char>>) -> Vec<Vec<bool>> {
         visible[i][0] = true;
         let mut max_height = trees[i][0];
         for j in 1..w {
-            println!("({}.{})  {} > {}", i, j,  trees[i][j], max_height);
             if trees[i][j] > max_height {
                 visible[i][j] = true;
             }
@@ -55,7 +56,6 @@ pub fn find_visible(trees: &Vec<Vec<char>>) -> Vec<Vec<bool>> {
         visible[i][w-1] = true; 
         let mut max_height = trees[i][w-1];
         for j in (0..w-1).rev() {
-            println!("({}.{})  {} < {}", i, j,  trees[i][j], max_height);
             if trees[i][j] > max_height {
                 visible[i][j] = true;
             }
@@ -66,7 +66,6 @@ pub fn find_visible(trees: &Vec<Vec<char>>) -> Vec<Vec<bool>> {
         visible[0][j] = true; 
         let mut max_height = trees[0][j];
         for i in 1..l {
-            println!("({}.{})  {} v {}", i, j,  trees[i][j], max_height);
             if trees[i][j] > max_height {
                 visible[i][j] = true;
             }
@@ -75,7 +74,6 @@ pub fn find_visible(trees: &Vec<Vec<char>>) -> Vec<Vec<bool>> {
         visible[l-1][j] = true; 
         let mut max_height = trees[l-1][j];
         for i in (0..l-1).rev() {
-            println!("({}.{})  {} ^ {}", i, j,  trees[i][j], max_height);
             if trees[i][j] > max_height {
                 visible[i][j] = true;
             } 
@@ -85,40 +83,40 @@ pub fn find_visible(trees: &Vec<Vec<char>>) -> Vec<Vec<bool>> {
     visible
 }
 
-fn scenic_score(trees: &Vec<Vec<char>>, pos: (usize, usize)) -> usize {
+pub fn scenic_score(trees: &Vec<Vec<char>>, pos: (usize, usize)) -> usize {
     let (l, w) = bounds(trees);
     let (x, y) = pos;
     let height = trees[x][y];
-    let mut north_count = 1;
-    let mut south_count = 1;
-    let mut east_count = 1;
-    let mut west_count = 1;
-    for j in (0..y-1).rev() {
+    let mut north_count = 0;
+    let mut south_count = 0;
+    let mut east_count = 0;
+    let mut west_count = 0;
+    for j in (0..y).rev() {
+        north_count += 1;
         if height <= trees[x][j] {
             break;
         }
-        north_count += 1;
     }
     for j in y+1..w {
+        south_count += 1;
         if height <= trees[x][j] {
             break;
         }
-        south_count += 1;
     }
     for i in x+1..l {
-        if height <= trees[i][y] {
-            break;
-        }
         east_count += 1;
-    }
-    for i in (x-1..0).rev() {
         if height <= trees[i][y] {
             break;
         }
-        west_count += 1;
     }
-    println!("{} {} {} {}", north_count, south_count, east_count, west_count);
-    return north_count * south_count * east_count * west_count
+    for i in (0..x).rev() {
+        west_count += 1;
+        if height <= trees[i][y] {
+            break;
+        }
+    }
+    let score = north_count * south_count * east_count * west_count;
+    score
 }
 
 
@@ -156,6 +154,13 @@ mod tests {
     pub fn test_scenic_score_1_2() {
         let actual = scenic_score(&input_data().trees, (1,2));
         let expected = 4;
+        assert_eq!(actual, expected)
+    }
+
+    #[test]
+    pub fn test_scenic_score_3_2() {
+        let actual = scenic_score(&input_data().trees, (3,2));
+        let expected = 8;
         assert_eq!(actual, expected)
     }
 
