@@ -1,11 +1,15 @@
 #![feature(test)]
-use aoc_2022_8::{AocError, InputModel};
+use aoc_2022_8::{AocError, InputModel, find_visible};
 
 const INPUT: &str = include_str!("../data/input.txt");
 
 
-fn part1(_input: &InputModel) -> Result<String,AocError> {
-    return Ok("Not implemented".to_string())
+fn part1(input: &InputModel) -> Result<String,AocError> {
+    Ok(find_visible(&input.trees).into_iter()
+        .flatten()
+        .filter(|&x| x)
+        .count()
+        .to_string())
 }
 
 fn part2(_input: &InputModel) -> Result<String, AocError> {
@@ -28,10 +32,21 @@ mod tests {
     use super::*;
     use test::Bencher;
 
-    const TEST_INPUT: &str = "";
+    const TEST_INPUT: &str = "30373
+25512
+65332
+33549
+35390";
 
     pub fn input_data() -> InputModel {
         InputModel {
+            trees: vec![
+                vec!['3', '0', '3', '7', '3', ],
+                vec!['2', '5', '5', '1', '2', ],
+                vec!['6', '5', '3', '3', '2', ],
+                vec!['3', '3', '5', '4', '9', ],
+                vec!['3', '5', '3', '9', '0', ],
+            ],
         }
     }
 
@@ -46,7 +61,7 @@ mod tests {
     #[test]
     fn test_part1() {
         let actual = part1(&input_data()).unwrap();
-        let expected = "";
+        let expected = "21";
 
         assert_eq!(actual, expected);
     }
