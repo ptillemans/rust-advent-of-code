@@ -64,17 +64,19 @@ mod tests {
     
     #[bench]
     fn bench_parse(b: &mut Bencher) {
-        b.iter(||INPUT.parse::<InputModel>());
+        b.iter(|| INPUT.parse::<InputModel>());
     }
 
     #[bench]
     fn bench_part1(b: &mut Bencher) {
-        b.iter(|| part1(&input_data()))
+        let input:InputModel = INPUT.parse::<InputModel>().unwrap();
+        b.iter(|| part1(&input))
     }
 
     #[bench]
     fn bench_part2(b: &mut Bencher) {
-        b.iter(|| part2(&input_data()))
+        let input:InputModel = INPUT.parse::<InputModel>().unwrap();
+        b.iter(|| part2(&input))
     }
 
 }
