@@ -4,8 +4,9 @@ use aoc_2022_10::{AocError, InputModel, Computer, crt_output};
 const INPUT: &str = include_str!("../data/input.txt");
 
 
-fn part1(_input: &InputModel) -> Result<String,AocError> {
-    let mut computer = Computer::new(_input.instructions.clone());
+fn part1(input: &InputModel) -> Result<String,AocError> {
+    let code = input.instructions.clone();
+    let mut computer = Computer::new(&code);
     let signal: i32 = (20..=220).step_by(40)
         .map(|cycle| {
             computer.signal_strength_at_cycle(cycle)
@@ -18,8 +19,9 @@ fn part1(_input: &InputModel) -> Result<String,AocError> {
 }
 
 
-fn part2(_input: &InputModel) -> Result<String, AocError> {
-    crt_output(&_input.instructions)
+fn part2(input: &InputModel) -> Result<String, AocError> {
+    let code = input.instructions.clone();
+    crt_output(&code)
 }
 
 fn main() -> Result<(), AocError> {
