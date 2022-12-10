@@ -85,13 +85,13 @@ impl Instruction {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct Computer {
-    code: Vec<Instruction>,
+pub struct Computer<'a> {
+    code: &'a Vec<Instruction>,
     registers: Registers,
 }
 
-impl Computer {
-    pub fn new(code: Vec<Instruction>) -> Self {
+impl <'a> Computer<'a> {
+    pub fn new(code: &'a Vec<Instruction>) -> Self {
         Computer { code, registers: Registers::new() }
     }
 
@@ -107,7 +107,7 @@ impl Computer {
         self.registers.pc >= self.code.len()
     }
     
-    fn log_execution(&mut self) -> impl Iterator<Item=Registers> + '_ {
+    fn log_execution(&'a mut self) -> impl Iterator<Item=Registers> + 'a {
         vec![self.registers.clone()].into_iter()
             .chain(std::iter::from_fn(move || {
                 if self.is_halted() {
@@ -146,7 +146,7 @@ fn pixel_on(cycle: usize, x: i32) -> bool {
 }
 
 pub fn crt_output(code: &Vec<Instruction>) -> Result<String, AocError> {    
-    let mut computer = Computer::new(code.clone());
+    let mut computer = Computer::new(&code);
     let mut crt = vec!['.';240];
     computer.log_execution()
         .reduce(|last_r, r| {
@@ -342,7 +342,8 @@ noop";
 
     #[test]
     fn test_state_log() {
-        let mut computer = Computer::new(test_input().instructions);
+        let code = test_input().instructions;
+        let mut computer = Computer::new(&code);
         let log = computer.log_execution().collect::<Vec<_>>();
         let expected = vec![
             Registers { cycle: 1, pc: 0, x: 1 },
@@ -356,7 +357,7 @@ noop";
     #[test]
     fn test_sample_cycle() {
         let code = LARGER_TEST_INPUT.parse::<InputModel>().unwrap().instructions;
-        let mut computer = Computer::new(code);
+        let mut computer = Computer::new(&code);
         let samples = vec![
             (20, 21),
             (60, 19),
@@ -374,7 +375,7 @@ noop";
     #[test]
     fn test_signal_strength() {
         let code = LARGER_TEST_INPUT.parse::<InputModel>().unwrap().instructions;
-        let mut computer = Computer::new(code);
+        let mut computer = Computer::new(&code);
         let samples = vec![
             (20, 420),
             (60, 1140),
