@@ -32,8 +32,9 @@ impl Position {
         (self.x - other.x).abs() + (self.y - other.y).abs()
     }
 
-    pub fn distance(&self, other: &Position) -> i32 {
-        (self.x - other.x).pow(2) + (self.y - other.y).pow(2)
+    pub fn distance(&self, other: &Position) -> f32 {
+        ((self.x as f32 - other.x as f32).powf(2.0) 
+            + (self.y as f32 - other.y as f32).powf(2.0)).sqrt()
     }
 
 }
