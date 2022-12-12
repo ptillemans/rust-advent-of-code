@@ -7,22 +7,38 @@ const INPUT: &str = include_str!("../data/input.txt");
 fn part1(input: &InputModel) -> Result<String,AocError> {
     let start = find_start(input);
     let end = find_end(input);
-    let path = shortest_path(input, &start, &end)?;
-    // steps between start and end is 1 less than the length of the path
-    return Ok((path.len() - 1).to_string())
+    let steps = shortest_path_bfs(input, &start, &end)?;
+    return Ok(steps.to_string())
 }
 
-fn part2(_input: &InputModel) -> Result<String, AocError> {
-    return Ok("Not implemented".to_string())
+fn part2(input: &InputModel) -> Result<String, AocError> {
+    let end = find_end(input);
+    let steps = scenic_route(input, &end)?;
+    return Ok(steps.to_string())
+}
+
+fn part1_astar(input: &InputModel) -> Result<String,AocError> {
+    let start = find_start(input);
+    let end = find_end(input);
+    let steps = shortest_path(input, &start, &end).map(|path| path.len())?;
+    return Ok(steps.to_string())
+}
+
+fn part2_astar(input: &InputModel) -> Result<String, AocError> {
+    let end = find_end(input);
+    let steps = scenic_route_astar(input, &end)?;
+    return Ok(steps.to_string())
 }
 
 fn main() -> Result<(), AocError> {
     let input:InputModel = INPUT.parse::<InputModel>()?;
     let part1_result = part1(&input)?;
     println!("Part1: {}", part1_result);
+    println!("Part1: {}", part1_astar(&input)?);
     println!("--------------");
     let part2_result = part2(&input)?;
     println!("Part2: {}", part2_result);
+    println!("Part2: {}", part2_astar(&input)?);
     Ok(())
 }
 
@@ -61,7 +77,7 @@ abdefghi";
     #[test]
     fn test_part2() {
         let actual = part2(&input_data()).unwrap();
-        let expected = "";
+        let expected = "29";
 
         assert_eq!(actual, expected);
     }
@@ -81,4 +97,13 @@ abdefghi";
         b.iter(|| part2(&input_data()))
     }
 
+    #[bench]
+    fn bench_part1_astar(b: &mut Bencher) {
+        b.iter(|| part1_astar(&input_data()))
+    }
+
+    #[bench]
+    fn bench_part2_astar(b: &mut Bencher) {
+        b.iter(|| part2_astar(&input_data()))
+    }
 }
