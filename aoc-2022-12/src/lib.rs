@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{str::FromStr, collections::HashSet};
 use aoc_common::position::*;
 
 
@@ -58,13 +58,13 @@ pub fn next_moves(grid: &Grid, current: &Position) -> Vec<Position> {
     let possible_moves: Vec<(i32, i32)> = vec![(-1, 0), (1, 0), (0, -1), (0, 1)];
     let current_height = grid.grid[current.y as usize][current.x as usize];
     // ensure we can leave start by forcing start to be a higher value than the surrounding tiles
-    let current_height = if current_height == b'S' { b'z' + 1} else { current_height };  
+    let current_height = if current_height == b'S' { b'a'} else { current_height };  
     possible_moves.into_iter()
         .map(|m| *current + m.into())
         .filter(|&pos| grid.get(pos).is_some())
         .filter(|&pos| {
             let pos_height = grid.get(pos).unwrap();
-            let pos_height = if pos_height == b'E' { b'z' + 1 } else { pos_height };
+            let pos_height = if pos_height == b'E' { b'z' } else { pos_height };
             pos_height <= current_height + 1 
         })
         .collect()
@@ -113,6 +113,54 @@ fn reconstruct_path(came_from: &std::collections::HashMap<Position, Position>, c
     }
     total_path.reverse();
     total_path
+}
+
+
+pub fn shortest_path_bfs(grid: &Grid, start: &Position, end: &Position) -> Result<i32, AocError> {
+    let mut open = std::collections::VecDeque::new();
+    open.push_front((0, start.clone()));
+    let mut seen: HashSet<Position> = HashSet::new();
+    loop {
+        let (steps, current) = open.pop_front().ok_or(AocError::NoSolution)?;
+        if current == *end {
+            return Ok(steps);
+        }
+        next_moves(grid, &current).into_iter()
+            .for_each(|pos| {
+                if !seen.contains(&pos) {
+                    open.push_back((steps+1, pos));
+                    seen.insert(pos);
+                };
+            });
+    }
+}
+
+pub fn scenic_route(grid: &Grid, end:&Position) -> Result<i32, AocError> {
+    grid.grid.iter()
+        .enumerate()
+        .filter(|(_, row)| row.contains(&b'a') || row.contains(&b'S'))
+        .flat_map(|(y, row)| {
+            row.iter()
+                .enumerate()
+                .filter(|(_, &c)| c == b'a' || c == b'S')
+                .filter_map(move |(x, _)| shortest_path_bfs(grid, &(x, y).into(), end).ok())
+    })
+        .min()
+        .ok_or(AocError::NoSolution)
+}
+
+pub fn scenic_route_astar(grid: &Grid, end:&Position) -> Result<i32, AocError> {
+    grid.grid.iter()
+        .enumerate()
+        .filter(|(_, row)| row.contains(&b'a') || row.contains(&b'S'))
+        .flat_map(|(y, row)| {
+            row.iter()
+                .enumerate()
+                .filter(|(_, &c)| c == b'a' || c == b'S')
+                .filter_map(move |(x, _)| shortest_path(grid, &(x, y).into(), end).map(|path| path.len() as i32 - 1).ok())
+    })
+        .min()
+        .ok_or(AocError::NoSolution)
 }
 
 pub fn test_data() -> InputModel {
@@ -182,6 +230,45 @@ abdefghi";
         println!("Path: {:?}", path);
 
         let actual = path.unwrap().len() - 1;
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_shortest_path_bfs() {
+        let input = test_data();
+        let steps = shortest_path_bfs(&input, &(0, 0).into(), &(5, 2).into());
+        let expected = 31;
+
+        println!("Path: {:?}", steps);
+
+        let actual = steps.unwrap();
+
+        assert_eq!(actual, expected);
+    }
+    
+    #[test]
+    fn test_scenic_route() {
+        let input = test_data();
+        let steps = scenic_route(&input, &(5, 2).into());
+        let expected = 29;
+
+        println!("Path: {:?}", steps);
+
+        let actual = steps.unwrap();
+
+        assert_eq!(actual, expected);
+    }
+    
+    #[test]
+    fn test_scenic_route_astar() {
+        let input = test_data();
+        let steps = scenic_route_astar(&input, &(5, 2).into());
+        let expected = 29;
+
+        println!("Path: {:?}", steps);
+
+        let actual = steps.unwrap();
 
         assert_eq!(actual, expected);
     }
