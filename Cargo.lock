@@ -87,6 +87,7 @@ dependencies = [
 name = "aoc-2022-12"
 version = "0.1.0"
 dependencies = [
+ "aoc-common",
  "thiserror",
 ]
 
@@ -150,6 +151,10 @@ dependencies = [
  "nom",
  "thiserror",
 ]
+
+[[package]]
+name = "aoc-common"
+version = "0.1.0"
 
 [[package]]
 name = "bitflags"

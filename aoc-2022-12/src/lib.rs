@@ -1,7 +1,5 @@
 use std::str::FromStr;
-
-mod position;
-use position::Position;
+use aoc_common::position::*;
 
 
 pub type InputModel = Grid; 
@@ -44,7 +42,7 @@ fn find_char(input: &Grid, target: u8) -> Position {
     input.grid.iter()
         .enumerate()
         .find(|(_, row)| row.contains(&target))
-        .map(|(y, row)| ( row.iter().position(|&c| c == target).unwrap(), y ).into())
+        .map(|(y, row)| ( row.iter().position(|&c| c == target).unwrap() as i32, y as i32 ).into())
         .unwrap()
 }
 
@@ -80,7 +78,7 @@ pub fn shortest_path(grid: &Grid, start: &Position, end: &Position) -> Result<Ve
     let mut g_score = std::collections::HashMap::new();
     let mut f_score = std::collections::HashMap::new();
     g_score.insert(start.clone(), 0);
-    f_score.insert(start.clone(), start.distance(end));
+    f_score.insert(start.clone(), start.manhattan(end));
 
     while !open_set.is_empty() {
         let current = open_set.iter()
