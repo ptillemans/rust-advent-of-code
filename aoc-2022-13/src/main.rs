@@ -1,5 +1,5 @@
 #![feature(test)]
-use aoc_2022_13::{AocError, InputModel};
+use aoc_2022_13::*;
 
 const INPUT: &str = include_str!("../data/input.txt");
 
@@ -28,24 +28,17 @@ mod tests {
     use super::*;
     use test::Bencher;
 
-    const TEST_INPUT: &str = "";
-
-    pub fn input_data() -> InputModel {
-        InputModel {
-        }
-    }
-
     #[test]
     fn test_parse() {
         let actual = TEST_INPUT.parse::<InputModel>().unwrap();
-        let expected = input_data();
+        let expected = test_input();
 
         assert_eq!(actual, expected);
     }
 
     #[test]
     fn test_part1() {
-        let actual = part1(&input_data()).unwrap();
+        let actual = part1(&test_input()).unwrap();
         let expected = "";
 
         assert_eq!(actual, expected);
@@ -53,7 +46,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        let actual = part2(&input_data()).unwrap();
+        let actual = part2(&test_input()).unwrap();
         let expected = "";
 
         assert_eq!(actual, expected);
@@ -66,12 +59,12 @@ mod tests {
 
     #[bench]
     fn bench_part1(b: &mut Bencher) {
-        b.iter(|| part1(&input_data()))
+        b.iter(|| part1(&test_input()))
     }
 
     #[bench]
     fn bench_part2(b: &mut Bencher) {
-        b.iter(|| part2(&input_data()))
+        b.iter(|| part2(&test_input()))
     }
 
 }
