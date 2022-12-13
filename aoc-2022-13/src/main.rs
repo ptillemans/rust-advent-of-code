@@ -54,7 +54,7 @@ mod tests {
     #[test]
     fn test_part2() {
         let actual = part2(&test_input()).unwrap();
-        let expected = "";
+        let expected = "140";
 
         assert_eq!(actual, expected);
     }
