@@ -9,16 +9,28 @@ use nom::{
 };
 
 
-#[derive(Debug, PartialEq, Eq)]
-enum Packet {
+#[derive(Debug, PartialEq, Eq, Ord, Clone)]
+pub enum Packet {
     List(Vec<Packet>),
     Int(i64),
+}
+
+impl PartialOrd for Packet {
+
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self, other) {
+            (Packet::Int(a), Packet::Int(b)) => a.partial_cmp(b),
+            (Packet::List(a), Packet::List(b)) => a.partial_cmp(b),
+            (Packet::Int(a), Packet::List(b)) => vec![Packet::Int(*a)].partial_cmp(b),
+            (Packet::List(a), Packet::Int(b)) => a.partial_cmp(&vec![Packet::Int(*b)]),
+        }
+    }
 }
 
 impl Packet {
 
     // create a nom parser for a Packet
-    fn parser(input: &str) -> nom::IResult<&str, Packet> {
+    fn parser(input: &str) -> IResult<&str, Packet> {
         alt((
             delimited(
                 char('['),
@@ -42,7 +54,7 @@ pub enum AocError {
         
 #[derive(Debug, PartialEq, Eq)]
 pub struct InputModel  {
-    pairs: Vec<(Packet, Packet)>,
+    pub pairs: Vec<(Packet, Packet)>,
 }
 
 
@@ -126,10 +138,59 @@ pub fn test_input() -> InputModel {
     }
 }
 
+fn make_divider(x: i64) -> Packet {
+    Packet::List(vec![Packet::List(vec![Packet::Int(x)])])
+}
+
+fn dividers() -> Vec<Packet> {
+    let dividers = vec![make_divider(2), make_divider(6)];
+    dividers
+}
+
+fn sorted_with_dividers(input: &InputModel) -> Vec<Packet> {
+    let dividers = dividers();
+    let mut packets: Vec<Packet> = input.pairs.iter()
+        .flat_map(|(a, b)| vec![a, b].into_iter())
+        .chain(dividers.iter())
+        .cloned()
+        .collect();
+    packets.sort();
+    packets
+}
+
+pub fn decoder_key(input: &InputModel) -> i64 {
+    let packets = sorted_with_dividers(input);
+    dividers().iter()
+        .filter_map(|divider| {
+            packets.iter().position(|packet| packet == divider)
+        })
+        .map(|x| (x + 1) as i64)
+        .product()
+}
+
 #[cfg(test)]
 mod tests {
 
     use super::*;
+
+    const PART2_DATA: &str = "[]
+[[]]
+[[[]]]
+[1,1,3,1,1]
+[1,1,5,1,1]
+[[1],[2,3,4]]
+[1,[2,[3,[4,[5,6,0]]]],8,9]
+[1,[2,[3,[4,[5,6,7]]]],8,9]
+[[1],4]
+[[2]]
+[3]
+[[4,4],4,4]
+[[4,4],4,4,4]
+[[6]]
+[7,7,7]
+[7,7,7,7]
+[[8,7,6]]
+[9]";
 
     #[test]
     fn test_parse_packet() {
@@ -142,6 +203,35 @@ mod tests {
     fn test_parse() {
         let actual = TEST_INPUT.parse::<InputModel>().unwrap();
         let expected = test_input();
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_order() {
+        let input = test_input();
+        let expected = vec![true, true, false, true, false, true, false, false];
+        let actual: Vec<bool> = input.pairs.iter().map(|(a, b)| a < b).collect();
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_sorted_with_dividers() {
+        let input = test_input();
+        let expected = separated_list1(
+            newline,
+            Packet::parser)(PART2_DATA).unwrap().1;
+        let actual = sorted_with_dividers(&input);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_decoder_key() {
+        let input = test_input();
+        let expected = 140;
+        let actual = decoder_key(&input);
 
         assert_eq!(actual, expected);
     }

@@ -4,12 +4,19 @@ use aoc_2022_13::*;
 const INPUT: &str = include_str!("../data/input.txt");
 
 
-fn part1(_input: &InputModel) -> Result<String,AocError> {
-    return Ok("Not implemented".to_string())
+fn part1(input: &InputModel) -> Result<String,AocError> {
+    // sum of all 1-based indices or pairw where the left < right
+    let sum: usize = input.pairs.iter()
+        .enumerate()
+        .filter_map(|(i, (left,right))| {
+            if left < right { Some(i+1)} else { None }
+        })
+        .sum();
+    Ok(sum.to_string())
 }
 
-fn part2(_input: &InputModel) -> Result<String, AocError> {
-    return Ok("Not implemented".to_string())
+fn part2(input: &InputModel) -> Result<String, AocError> {
+    Ok(decoder_key(&input).to_string())
 }
 
 fn main() -> Result<(), AocError> {
@@ -39,7 +46,7 @@ mod tests {
     #[test]
     fn test_part1() {
         let actual = part1(&test_input()).unwrap();
-        let expected = "";
+        let expected = "13";
 
         assert_eq!(actual, expected);
     }
