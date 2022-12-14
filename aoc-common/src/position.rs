@@ -23,6 +23,10 @@ impl <T> From<(T, T)> for Position
 
 impl Position {
 
+    pub fn new(x: i32, y: i32) -> Position {
+        Position { x, y }
+    }
+
     // calculate the manhattan distance between two positions
     pub fn manhattan(&self, other: &Position) -> i32 {
         (self.x - other.x).abs() + (self.y - other.y).abs()

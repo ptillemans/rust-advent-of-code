@@ -16,7 +16,7 @@ fn part1(input: &InputModel) -> Result<String,AocError> {
 }
 
 fn part2(input: &InputModel) -> Result<String, AocError> {
-    Ok(decoder_key(&input).to_string())
+    Ok(decoder_key(input).to_string())
 }
 
 fn main() -> Result<(), AocError> {
