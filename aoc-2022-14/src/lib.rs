@@ -1,3 +1,4 @@
+#![feature(result_option_inspect)]
 use std::{
     collections::HashMap,
     str::FromStr,
@@ -14,7 +15,7 @@ use nom::{
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct InputModel  {
-    paths: Vec<Path>
+    pub paths: Vec<Path>
 }
 
 type Path = Vec<Position>;
@@ -27,15 +28,19 @@ enum Material {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-struct Cave {
+pub struct Cave {
     grid: HashMap<Position, Material>,
+    depth: i32,
 }
 
 impl Cave {
-    fn new(paths: Vec<Path>) -> Cave {
-        Cave {
-            grid: expand_paths(paths)
-        }
+    pub fn new(paths: &[Path]) -> Cave {
+        let grid = expand_paths(paths);
+        let depth = grid.keys()
+            .map(|pos| pos.y)
+            .max()
+            .unwrap_or(0);
+        Cave { grid, depth }
     }
 
     fn get(&self, pos: &Position) -> Material {
@@ -44,27 +49,54 @@ impl Cave {
             .unwrap_or(&Material::Air)
             .clone()
     }
+
+    fn put(&mut self, pos: &Position, material: Material) {
+        self.grid.insert(*pos, material);
+    }
+
+    pub fn drop_sand(&mut self, pos: &Position) -> Option<Position> {
+        rest_position(self, pos, self.depth)
+            .inspect(|pos| self.put(pos, Material::Sand))
+    }
+    
     
 }
 
 
 // expand the paths to a grid of positions
-fn expand_paths(paths: Vec<Path>) -> HashMap<Position, Material> {
-    paths.into_iter()
-        .flat_map(|path| expand_path(path))
+fn expand_paths(paths: &[Path]) -> HashMap<Position, Material> {
+    paths.iter()
+        .flat_map(expand_path)
         .map(|position| (position, Material::Rock))
         .collect()
 
 }
 
 // return all positions between successive points in a path
-fn expand_path(path: Path) -> Vec<Position> {
+fn expand_path(path: &Path) -> Vec<Position> {
     path.windows(2)
         .flat_map(|window| (min(window[0].x,window[1].x)..=max(window[0].x,window[1].x))
                     .flat_map(|x| 
                         (min(window[0].y,window[1].y)..=max(window[0].y,window[1].y))
                            .map(move |y| Position::new(x, y))))
         .collect()
+}
+
+fn rest_position(cave: &Cave, pos: &Position, max_y: i32) -> Option<Position> {
+    let mut last = *pos;
+    let mut next = Some(*pos);
+    while let Some(pos) = next {
+        if pos.y > max_y {
+            return None;
+        }
+        last = pos;
+        next = vec![Position::new(pos.x, pos.y + 1),
+             Position::new(pos.x - 1, pos.y + 1),
+             Position::new(pos.x + 1, pos.y + 1)]
+         .into_iter()
+         .find(|pos| cave.get(pos) == Material::Air);
+    }
+    Some(last)
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -96,10 +128,10 @@ fn parse_position(s: &str) -> IResult<&str, Position> {
     ).map(|(x, y)| Position::new(x, y)).parse(s)
 }
 
-const TEST_INPUT: &str = "498,4 -> 498,6 -> 496,6
+pub const TEST_INPUT: &str = "498,4 -> 498,6 -> 496,6
 503,4 -> 502,4 -> 502,9 -> 494,9";
 
-fn test_input() -> InputModel {
+pub fn test_input() -> InputModel {
     InputModel {
         paths: vec![
             vec![
@@ -135,7 +167,7 @@ mod tests {
     #[test]
     fn test_paths_to_grid() {
 
-        let actual = Cave::new(test_input().paths);
+        let actual = Cave::new(&test_input().paths);
         
         assert_eq!(actual.get(&Position::new(498,3)), Material::Air);
         assert_eq!(actual.get(&Position::new(498,4)), Material::Rock);
@@ -153,4 +185,24 @@ mod tests {
 
     }
 
+    #[test]
+    fn test_drop_sand() {
+        let mut cave = Cave::new(&test_input().paths);
+        let data = vec![
+            Position::new(500, 8),
+            Position::new(499, 8),
+            Position::new(501, 8),
+            Position::new(500, 7),
+            Position::new(498, 8),
+        ];
+
+        let drop_pos = Position::new(500, 0);
+        for pos in data {
+            if let Some(actual) = cave.drop_sand(&drop_pos) {
+                assert_eq!(actual, pos);
+            } else {
+                panic!();
+            }
+        }
+    }
 }
