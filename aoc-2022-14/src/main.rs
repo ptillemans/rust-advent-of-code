@@ -14,8 +14,12 @@ fn part1(input: &InputModel) -> Result<String,AocError> {
     Ok(count.to_string())
 }
 
-fn part2(_input: &InputModel) -> Result<String, AocError> {
-    return Ok("Not implemented".to_string())
+fn part2(input: &InputModel) -> Result<String, AocError> {
+    let drop_pos = Position::new(500, 0);
+    let mut cave = Cave::new(&input.paths);
+    let count = from_fn(|| cave.drop_sand_with_floor(&drop_pos))
+        .count();
+    Ok(count.to_string())
 }
 
 fn main() -> Result<(), AocError> {
@@ -57,7 +61,7 @@ mod tests {
     #[test]
     fn test_part2() {
         let actual = part2(&test_input()).unwrap();
-        let expected = "";
+        let expected = "93";
 
         assert_eq!(actual, expected);
     }
