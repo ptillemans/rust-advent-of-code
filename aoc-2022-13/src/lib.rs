@@ -9,7 +9,7 @@ use nom::{
 };
 
 
-#[derive(Debug, PartialEq, Eq, Ord, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Packet {
     List(Vec<Packet>),
     Int(i64),
@@ -27,6 +27,12 @@ impl PartialOrd for Packet {
     }
 }
 
+impl Ord for Packet {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.partial_cmp(other).unwrap()
+    }
+}
+
 impl Packet {
 
     // create a nom parser for a Packet
@@ -36,7 +42,7 @@ impl Packet {
                 char('['),
                 separated_list0(char(','), Packet::parser),
                 char(']')
-            ).map(|v| Packet::List(v)),
+            ).map(Packet::List),
             map(
                 digit1,
                 |s: &str| Packet::Int(s.parse::<i64>().unwrap())
@@ -139,19 +145,18 @@ pub fn test_input() -> InputModel {
 }
 
 fn make_divider(x: i64) -> Packet {
+    // return packet [[x]]
     Packet::List(vec![Packet::List(vec![Packet::Int(x)])])
 }
 
 fn dividers() -> Vec<Packet> {
-    let dividers = vec![make_divider(2), make_divider(6)];
-    dividers
+    vec![make_divider(2), make_divider(6)]
 }
 
 fn sorted_with_dividers(input: &InputModel) -> Vec<Packet> {
-    let dividers = dividers();
     let mut packets: Vec<Packet> = input.pairs.iter()
         .flat_map(|(a, b)| vec![a, b].into_iter())
-        .chain(dividers.iter())
+        .chain(dividers().iter())
         .cloned()
         .collect();
     packets.sort();
@@ -235,7 +240,5 @@ mod tests {
 
         assert_eq!(actual, expected);
     }
-
-
 
 }
