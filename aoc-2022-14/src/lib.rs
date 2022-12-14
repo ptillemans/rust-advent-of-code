@@ -59,6 +59,10 @@ impl Cave {
             .inspect(|pos| self.put(pos, Material::Sand))
     }
     
+    pub fn drop_sand_with_floor(&mut self, pos: &Position) -> Option<Position> {
+        rest_position_with_floor(self, pos, self.depth + 2)
+            .inspect(|pos| self.put(pos, Material::Sand))
+    }
     
 }
 
@@ -88,6 +92,29 @@ fn rest_position(cave: &Cave, pos: &Position, max_y: i32) -> Option<Position> {
     while let Some(pos) = next {
         if pos.y > max_y {
             return None;
+        }
+        last = pos;
+        next = vec![Position::new(pos.x, pos.y + 1),
+             Position::new(pos.x - 1, pos.y + 1),
+             Position::new(pos.x + 1, pos.y + 1)]
+         .into_iter()
+         .find(|pos| cave.get(pos) == Material::Air);
+    }
+    Some(last)
+}
+
+fn rest_position_with_floor(cave: &Cave, pos: &Position, floor: i32) -> Option<Position> {
+    let mut last = *pos;
+    let mut next = Some(*pos);
+
+    // stop if drop location is blocked
+    if cave.get(&Position::new(pos.x, pos.y)) != Material::Air {
+        return None;
+    }
+
+    while let Some(pos) = next {
+        if pos.y >= floor {
+            break;
         }
         last = pos;
         next = vec![Position::new(pos.x, pos.y + 1),
