@@ -1,11 +1,17 @@
 #![feature(test)]
-use aoc_2022_14::{AocError, InputModel};
+use aoc_2022_14::*;
+use std::iter::from_fn;
+use aoc_common::position::Position;
 
 const INPUT: &str = include_str!("../data/input.txt");
 
 
-fn part1(_input: &InputModel) -> Result<String,AocError> {
-    return Ok("Not implemented".to_string())
+fn part1(input: &InputModel) -> Result<String,AocError> {
+    let drop_pos = Position::new(500, 0);
+    let mut cave = Cave::new(&input.paths);
+    let count = from_fn(|| cave.drop_sand(&drop_pos))
+        .count();
+    Ok(count.to_string())
 }
 
 fn part2(_input: &InputModel) -> Result<String, AocError> {
@@ -13,7 +19,7 @@ fn part2(_input: &InputModel) -> Result<String, AocError> {
 }
 
 fn main() -> Result<(), AocError> {
-    let input:InputModel = INPUT.parse::<InputModel>()?;
+    let input:InputModel = input_data()?;
     let part1_result = part1(&input)?;
     println!("Part1: {}", part1_result);
     println!("--------------");
@@ -22,38 +28,35 @@ fn main() -> Result<(), AocError> {
     Ok(())
 }
 
+fn input_data() -> Result<InputModel, AocError> {   
+    INPUT.parse::<InputModel>()
+}
+
 #[cfg(test)]
 mod tests {
     extern crate test;
     use super::*;
     use test::Bencher;
 
-    const TEST_INPUT: &str = "";
-
-    pub fn input_data() -> InputModel {
-        InputModel {
-        }
-    }
-
     #[test]
     fn test_parse() {
         let actual = TEST_INPUT.parse::<InputModel>().unwrap();
-        let expected = input_data();
+        let expected = test_input();
 
         assert_eq!(actual, expected);
     }
 
     #[test]
     fn test_part1() {
-        let actual = part1(&input_data()).unwrap();
-        let expected = "";
+        let actual = part1(&test_input()).unwrap();
+        let expected = "24";
 
         assert_eq!(actual, expected);
     }
 
     #[test]
     fn test_part2() {
-        let actual = part2(&input_data()).unwrap();
+        let actual = part2(&test_input()).unwrap();
         let expected = "";
 
         assert_eq!(actual, expected);
@@ -66,12 +69,14 @@ mod tests {
 
     #[bench]
     fn bench_part1(b: &mut Bencher) {
-        b.iter(|| part1(&input_data()))
+        let input = input_data().unwrap();
+        b.iter(|| part1(&input))
     }
 
     #[bench]
     fn bench_part2(b: &mut Bencher) {
-        b.iter(|| part2(&input_data()))
+        let input = input_data().unwrap();
+        b.iter(|| part2(&input))
     }
 
 }
