@@ -1,14 +1,16 @@
 #![feature(test)]
-use aoc_2022_15::{AocError, InputModel};
+use aoc_2022_15::*;
 
 const INPUT: &str = include_str!("../data/input.txt");
 
 
-fn part1(_input: &InputModel) -> Result<String,AocError> {
-    return Ok("Not implemented".to_string())
+fn part1(input: &InputModel) -> Result<String,AocError> {
+    let sensors = input.sensors.clone();
+    let covered = covered_positions(&sensors, 2_000_000);
+    Ok(covered.len().to_string())
 }
 
-fn part2(_input: &InputModel) -> Result<String, AocError> {
+fn part2(input: &InputModel) -> Result<String, AocError> {
     return Ok("Not implemented".to_string())
 }
 
@@ -28,13 +30,6 @@ mod tests {
     use super::*;
     use test::Bencher;
 
-    const TEST_INPUT: &str = "";
-
-    pub fn input_data() -> InputModel {
-        InputModel {
-        }
-    }
-
     #[test]
     fn test_parse() {
         let actual = TEST_INPUT.parse::<InputModel>().unwrap();
@@ -46,7 +41,7 @@ mod tests {
     #[test]
     fn test_part1() {
         let actual = part1(&input_data()).unwrap();
-        let expected = "";
+        let expected = "26";
 
         assert_eq!(actual, expected);
     }
