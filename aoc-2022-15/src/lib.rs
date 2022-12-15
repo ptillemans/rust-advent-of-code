@@ -61,12 +61,13 @@ impl Sensor {
         self.location.manhattan(&self.beacon)
     }
 
-    pub fn intersect_y(&self, y: i32) -> Vec<Position>{
-        let dy = (y - &self.location.y).abs();
+    pub fn intersect_y(&self, y: i32) -> Option<(i32, i32)> {
+        let dy = (y - self.location.y).abs();
         let dx = self.range() - dy;
-        ((self.location.x - dx)..=(self.location.x + dx))
-            .map(|x| Position::new(x, y))
-            .collect()
+        if dx < 0 {
+            return None;
+        }
+        Some((self.location.x - dx, self.location.x + dx))
     }
 
 }
@@ -94,27 +95,82 @@ fn integer_parser(input: &str) -> IResult<&str, i32> {
     .parse(input)
 }
 
-// finc unique positions on line y for all sensors
-pub fn covered_positions(sensors: &[Sensor], y: i32) -> Vec<Position> {
-    let unique_positions: HashSet<Position> = sensors.iter()
-        .flat_map(|sensor| sensor.intersect_y(y))
-        .collect();
-    let beacon_positions: HashSet<Position> = sensors.iter()
-        .map(|sensor| sensor.beacon)
-        .collect();
-    let sensor_positions: HashSet<Position> = sensors.iter()
-        .map(|sensor| sensor.location)
-        .collect();
-    let unique_positions: HashSet<Position> = unique_positions
-        .difference(&beacon_positions)
-        .cloned()
-        .collect();
-    unique_positions
-        .difference(&sensor_positions)
-        .cloned()
-        .collect()
+pub struct Cave {
+    sensors: Vec<Sensor>,
+    taken_positions: HashSet<Position>,
 }
 
+impl Cave {
+
+    pub fn new(sensors: Vec<Sensor>) -> Self {
+        let mut taken_positions = HashSet::new();
+        for sensor in &sensors {
+            taken_positions.insert(sensor.location);
+            taken_positions.insert(sensor.beacon);
+        }
+        Self {
+            sensors,
+            taken_positions,
+        }
+    }
+
+    // finc unique positions on line y for all sensors
+    pub fn covered_positions(&self, y: i32) -> i32 {
+
+        let covered = self.covered_parts(y);
+
+        let taken = self.taken_positions.iter()
+            .filter(|p| p.y == y)
+            .filter(|p| covered.iter().map(|(l, r)| p.x >= *l && p.x <= *r).any(|b| b))
+            .count();
+
+        covered.iter().map(|p| p.1 - p.0 + 1).sum::<i32>() - taken as i32
+    }
+
+    pub fn covered_parts(&self, y: i32) -> Vec<(i32, i32)> {
+        let mut covered_parts: Vec<(i32, i32)>= self.sensors.iter()
+            .filter_map(|sensor| sensor.intersect_y(y))
+            .collect();
+        covered_parts.sort();
+
+        let mut covered = vec![covered_parts[0]];
+        for curr in covered_parts.iter().skip(1) {
+            let prev = covered.pop().unwrap();
+            if prev.1 >= curr.0 {
+                if prev.1 < curr.1 {
+                    covered.push((prev.0, curr.1));
+                } else {
+                    covered.push(prev);
+                }
+            } else {
+                covered.push(prev);
+                covered.push(*curr);
+            }
+        }
+        covered
+    }
+
+    pub fn uncovered_areas(&self, bound: i32) -> Vec<(i32, Vec<(i32, i32)>)> {
+        (0.. bound)
+            .map(|y| (y, self.covered_parts(y)))
+            .filter(|(_, parts)| parts.len() > 1)
+            .map(|(y, parts)| (y, parts.iter()
+                 .zip(parts.iter().skip(1))
+                 .map(|(l, r)| (l.1 + 1, r.0 - 1))
+                 .filter(|(l, r)| l <= r)
+                 .collect::<Vec<(i32, i32)>>()))
+            .filter(|(_, parts)| !parts.is_empty())
+            .collect()
+    }
+
+    pub fn tuning_frequency(&self, bound: i32) -> Option<i64> {
+        let uncovered_areas = self.uncovered_areas(bound);
+        uncovered_areas.first()
+            .map(|(y, r)| (r.first().unwrap().0, y))
+            .filter(|(x, _)| *x > 0 && *x <= bound)
+            .map(|(x, y)| (x as i64) * 4_000_000 + (*y as i64))
+    }
+}
 
 pub const TEST_INPUT: &str = "Sensor at x=2, y=18: closest beacon is at x=-2, y=15
 Sensor at x=9, y=16: closest beacon is at x=10, y=16
@@ -179,11 +235,30 @@ mod tests {
     #[test]
     fn test_intersect() {
         let sensors = input_data().sensors;
-        let actual = covered_positions(&sensors, 10);
+        let cave = Cave::new(sensors);
+        let actual = cave.covered_positions(10);
         let expected = 26;
 
         println!("covered positions: {:?}", actual);
 
-        assert_eq!(actual.len(), expected);
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_uncovered_areas() {
+        let sensors = input_data().sensors;
+        let cave = Cave::new(sensors);
+        let actual = cave.uncovered_areas(20);
+        let expected = vec![(11, vec![(14, 14)])];
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_tuning_frequency() {
+        let sensors = input_data().sensors;
+        let cave = Cave::new(sensors);
+        let actual = cave.tuning_frequency(20);
+        let expected = Some(56000011);
+        assert_eq!(actual, expected);
     }
 }
