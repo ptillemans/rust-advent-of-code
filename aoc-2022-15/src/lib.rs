@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::str::FromStr;
 use aoc_common::position::Position;
 use nom::{
@@ -8,6 +9,7 @@ use nom::{
     multi::separated_list1,
     sequence::{pair, tuple,}
 };
+
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct InputModel  {
@@ -54,6 +56,19 @@ impl Sensor {
         .map(|(_, location, _, beacon)| Self::new(location, beacon))
         .parse(input)
     }
+
+    pub fn range(&self) -> i32 {
+        self.location.manhattan(&self.beacon)
+    }
+
+    pub fn intersect_y(&self, y: i32) -> Vec<Position>{
+        let dy = (y - &self.location.y).abs();
+        let dx = self.range() - dy;
+        ((self.location.x - dx)..=(self.location.x + dx))
+            .map(|x| Position::new(x, y))
+            .collect()
+    }
+
 }
 
 fn position_parser(input: &str) -> IResult<&str, Position> {
@@ -79,8 +94,29 @@ fn integer_parser(input: &str) -> IResult<&str, i32> {
     .parse(input)
 }
 
+// finc unique positions on line y for all sensors
+pub fn covered_positions(sensors: &[Sensor], y: i32) -> Vec<Position> {
+    let unique_positions: HashSet<Position> = sensors.iter()
+        .flat_map(|sensor| sensor.intersect_y(y))
+        .collect();
+    let beacon_positions: HashSet<Position> = sensors.iter()
+        .map(|sensor| sensor.beacon)
+        .collect();
+    let sensor_positions: HashSet<Position> = sensors.iter()
+        .map(|sensor| sensor.location)
+        .collect();
+    let unique_positions: HashSet<Position> = unique_positions
+        .difference(&beacon_positions)
+        .cloned()
+        .collect();
+    unique_positions
+        .difference(&sensor_positions)
+        .cloned()
+        .collect()
+}
 
-const TEST_INPUT: &str = "Sensor at x=2, y=18: closest beacon is at x=-2, y=15
+
+pub const TEST_INPUT: &str = "Sensor at x=2, y=18: closest beacon is at x=-2, y=15
 Sensor at x=9, y=16: closest beacon is at x=10, y=16
 Sensor at x=13, y=2: closest beacon is at x=15, y=3
 Sensor at x=12, y=14: closest beacon is at x=10, y=16
@@ -138,5 +174,16 @@ mod tests {
         let (rest, sensor) = actual.unwrap();
         assert_eq!(rest, "");
         assert_eq!(sensor, expected);
+    }
+
+    #[test]
+    fn test_intersect() {
+        let sensors = input_data().sensors;
+        let actual = covered_positions(&sensors, 10);
+        let expected = 26;
+
+        println!("covered positions: {:?}", actual);
+
+        assert_eq!(actual.len(), expected);
     }
 }
