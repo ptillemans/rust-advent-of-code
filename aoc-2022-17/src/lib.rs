@@ -1,5 +1,6 @@
 #![feature(result_option_inspect)]
 use std::str::FromStr;
+use std::collections::HashMap;
 use aoc_common::position::Position;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -187,25 +188,30 @@ pub struct Chamber {
     // place in order they are fallen.
     // i.e. the highest blocks are at the end of the vector
     blocks: Vec<Block>,
-    jets: Box<dyn Iterator<Item=Jet>>,
-    max_heights: Vec<(i32, Option<Block>)>,
+    jets: Vec<Jet>,
+    cache: HashMap<(usize, usize), (i64, i64)>,
+    j: usize,
+    s: usize,
+    n: usize,
 }
 
 
 impl Chamber {
     const WIDTH: usize = 7;
 
-    pub fn new(jets: Box<dyn Iterator<Item=Jet>>) -> Chamber {
+    pub fn new(jets: &[Jet]) -> Chamber {
         Chamber {
             blocks: Vec::with_capacity(10000),
-            jets,
-            max_heights: vec![(0, None); Self::WIDTH],
+            jets: jets.to_vec(),
+            cache: HashMap::new(),
+            j: 0,
+            s: 0,
+            n: 0,
         }
     }
 
     fn max_height(&self) -> i32 {
-        self.blocks
-            .iter()
+        self.last_blocks().iter()
             .map(|b| b.position.y + 1)
             .max()
             .unwrap_or(0)
@@ -228,13 +234,17 @@ impl Chamber {
         Block::new(position, shape)
     }
 
+    fn last_blocks(&self) -> &[Block] {
+        let from = self.blocks.len();
+        let from = if from < 100 { 0 } else { from - 100 };
+        &self.blocks.as_slice()[from..]
+    }
+
     fn is_free(&self, block: &Block) -> bool {
         if !self.is_block_in_chamber(block) {
             return false;
         }
-        let from = self.blocks.len();
-        let from = if from < 100 { 0 } else { from - 100 };
-        self.blocks.as_slice()[from..].iter()
+        self.last_blocks().iter()
             .all(|b| !b.collide(block))
     }
 
@@ -258,18 +268,15 @@ impl Chamber {
 
     fn fix_block(&mut self, block: Block) {
         self.blocks.push(block);
-        block.shape().iter().for_each(|p| {
-            if p.y >= self.max_heights[p.x as usize].0 {
-                self.max_heights[p.x as usize] = (p.y + 1, Some(block));
-            }
-        });
-        self.blocks.sort_by_key(|b| b.position.y);
+        self.n += 1;
     }
 
     fn let_shape_fall(&mut self, shape: Shape) -> Block {
         let mut block = self.add_shape(shape);
         loop {
-            let jet = self.jets.next().unwrap();
+            let jet = self.jets[self.j];
+            let l = self.jets.len();
+            self.j = (self.j + 1) % l;
             block = self.next_position(&block, jet);
             if block.stuck {
                 break;
@@ -279,21 +286,40 @@ impl Chamber {
     }
 
     pub fn play_rounds(&mut self, rounds: usize) -> usize {
-        let mut shapes = Shape::VALUES.iter().cycle();
         for i in 0..rounds {
             if i % 10000 == 0 {
                 println!("play round {}", i);
             }
-            self.let_shape_fall(*shapes.next().unwrap());
+
+            let key = (self.s, self.j);
+            let height = self.max_height() as i64;
+            if let Some((n, h)) = self.cache.get(&key) {
+                let period = self.n as i64 - n;
+                if ((rounds as i64 - *n as i64) % period) == 0 {
+                    println!("Found period {}, {}", n, period);
+                    println!("heights {}, {}", height, h);
+                    println!("rounds {}", rounds );
+                    let delta : i64 = height - h;
+                    let rest : i64 = rounds as i64 - *n as i64;
+                    let result = h + delta*(rest/period);
+                    return result as usize
+                }
+            } else {
+                self.cache.insert(key, (self.n as i64, height));
+            }
+
+            let shape = Shape::VALUES[self.s];
+            self.s = (self.s + 1) % 5;
+            self.let_shape_fall(shape);
         }
         self.max_height() as usize
     }
 
     fn find_start_repeating_pattern(&mut self, period: usize) -> Option<(usize, i64)> {
-        println!("playing {} rounds", 3*period);
-        self.play_rounds(3*period);
+        println!("playing {} rounds", 2*period);
+        self.play_rounds(2*period);
         let codes: Vec<i64> = self.blocks.iter().map(|b| b.encode()).collect();
-        (0..2*period)
+        (0..period)
             .inspect(|i| if i % 10000 == 0 {println!("checking round {}", i)})
             .find(|i| (*i..*i+100).all(|j| codes[j] == codes[j+period]))
             .inspect(|i| println!("found round {}", i))
@@ -306,17 +332,15 @@ impl Chamber {
 }
 
 pub fn play_many_rounds(jets: Vec<Jet>, rounds: i64) -> i64 {
-    let c_jets = Box::new(jets.clone().into_iter().cycle());
-    let mut chamber = Chamber::new(c_jets);
-    let period = 5*7*jets.len();
+    let mut chamber = Chamber::new(&jets.clone());
+    let period = 7*5*jets.len();
     let (offset, growth) = chamber.find_start_repeating_pattern(period).unwrap();
     let period = period as i64;
     println!("offset: {}, growth: {}", offset, growth);
     let multiple = (rounds - offset as i64) / period;
     let remainder = (rounds - offset as i64) % period;
     println!("multiple: {}, remainder: {}", multiple, remainder);
-    let c_jets = Box::new(jets.into_iter().cycle());
-    let mut chamber = Chamber::new(c_jets);
+    let mut chamber = Chamber::new(&jets.clone());
     let base_height = chamber.play_rounds(offset + remainder as usize) as i64;
     println!("base_height: {}", base_height);
     base_height + (multiple * growth)
@@ -344,7 +368,7 @@ mod tests {
     #[test]
     fn add_shape() {
         let jets = TEST_INPUT.parse::<InputModel>().unwrap().moves;
-        let mut chamber = Chamber::new(Box::new(jets.into_iter()));
+        let mut chamber = Chamber::new(&jets);
         let actual = chamber.add_shape(Shape::Bar);
         let expected = Block{position: Position::new(2, 3), shape: Shape::Bar, stuck: false};
         assert_eq!(actual, expected);
@@ -353,7 +377,7 @@ mod tests {
     #[test]
     fn test_max_height() {
         let jets = TEST_INPUT.parse::<InputModel>().unwrap().moves;
-        let mut chamber = Chamber::new(Box::new(jets.into_iter()));
+        let mut chamber = Chamber::new(&jets);
         chamber.blocks.push(Block::new(Position::new(0, 0), Shape::Bar));
         let actual = chamber.max_height();
         assert_eq!(actual, 1);
@@ -362,7 +386,7 @@ mod tests {
     #[test]
     fn next_position() {
         let jets = TEST_INPUT.parse::<InputModel>().unwrap().moves;
-        let mut chamber = Chamber::new(Box::new(jets.into_iter()));
+        let mut chamber = Chamber::new(&jets);
         let block = Block::new(Position::new(2, 3), Shape::Bar);
         let block = chamber.next_position(&block, Jet::Right);
         let expected = Block::new(Position::new(3, 2), Shape::Bar);
@@ -397,8 +421,8 @@ mod tests {
 
     #[test]
     fn test_drop_shape() {
-        let jets = TEST_INPUT.parse::<InputModel>().unwrap().moves.into_iter().cycle();
-        let mut chamber = Chamber::new(Box::new(jets));
+        let jets = TEST_INPUT.parse::<InputModel>().unwrap().moves;
+        let mut chamber = Chamber::new(&jets);
         let block = chamber.let_shape_fall(Shape::Bar);
         let expected = Block::new(Position::new(2, 0), Shape::Bar).stuck();
         assert_eq!(block, expected);
@@ -418,45 +442,32 @@ mod tests {
 
     #[test]
     fn test_play_rounds() {
-        let jets = TEST_INPUT.parse::<InputModel>().unwrap().moves.into_iter().cycle();
-        let mut chamber = Chamber::new(Box::new(jets.clone()));
+        let jets = TEST_INPUT.parse::<InputModel>().unwrap().moves;
+        let mut chamber = Chamber::new(&jets.clone());
         let actual = chamber.play_rounds(1);
         assert_eq!(actual, 1);
-        let mut chamber = Chamber::new(Box::new(jets.clone()));
+        let mut chamber = Chamber::new(&jets.clone());
         let actual = chamber.play_rounds(2);
         assert_eq!(actual, 4);
 
-        let mut chamber = Chamber::new(Box::new(jets.clone()));
+        let mut chamber = Chamber::new(&jets.clone());
         let actual = chamber.play_rounds(10);
         assert_eq!(actual, 17);
 
         // final test
-        let mut chamber = Chamber::new(Box::new(jets));
+        let mut chamber = Chamber::new(&jets);
         let actual = chamber.play_rounds(2022);
         assert_eq!(actual, 3068);
     }
 
     #[test]
-    fn test_find_start_repeating_pattern() {
-        let input = TEST_INPUT.parse::<InputModel>().unwrap();
-        let jets = input.moves.clone().into_iter().cycle();
-        let mut chamber = Chamber::new(Box::new(jets));
-        let period = 7 * input.moves.len() * 5;
-
-        let actual = chamber.find_start_repeating_pattern(period);
-        let expected = Some((15, 2120));
-
-        assert!(actual.is_some());
-        assert_eq!(actual, expected);
-    }
-
-    #[test]
     fn find_height_large() {
-        let input = TEST_INPUT.parse::<InputModel>().unwrap();
+        let jets = TEST_INPUT.parse::<InputModel>().unwrap().moves;
+        let mut chamber = Chamber::new(&jets.clone());
 
         let rounds = 1000000000000;
-        let actual = play_many_rounds(input.moves, rounds);
-        let expected: i64 = 1514285714288;
+        let actual = chamber.play_rounds(rounds);
+        let expected = 1514285714288;
 
         assert_eq!(actual, expected);
     }
