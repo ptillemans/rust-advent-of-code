@@ -9,3 +9,6 @@ edition = "2021"
 aoc-common = { version = "0.1.0", path = "../aoc-common" }
 bitvec = "1.0.1"
 thiserror="*"
+
+[profile.release]
+debug = true

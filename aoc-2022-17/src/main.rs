@@ -5,15 +5,16 @@ const INPUT: &str = include_str!("../data/input.txt");
 
 
 fn part1(input: &InputModel) -> Result<String,AocError> {
-    let jets = input.moves.clone().into_iter().cycle();
-    let mut chamber = Chamber::new(Box::new(jets));
+    let jets = input.moves.clone();
+    let mut chamber = Chamber::new(&jets);
     Ok(chamber.play_rounds(2022).to_string())
 }
 
 fn part2(input: &InputModel) -> Result<String, AocError> {
     let jets = input.moves.clone();
     let rounds = 1000000000000;
-    Ok(play_many_rounds(jets, rounds).to_string())
+    let mut chamber = Chamber::new(&jets);
+    Ok(chamber.play_rounds(rounds).to_string())
 }
 
 fn main() -> Result<(), AocError> {
