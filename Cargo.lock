@@ -135,6 +135,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "aoc-2022-18"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+]
+
+[[package]]
 name = "aoc-2022-2"
 version = "0.1.0"
 dependencies = [
