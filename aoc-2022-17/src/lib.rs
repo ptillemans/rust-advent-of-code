@@ -296,9 +296,6 @@ impl Chamber {
             if let Some((n, h)) = self.cache.get(&key) {
                 let period = self.n as i64 - n;
                 if ((rounds as i64 - *n as i64) % period) == 0 {
-                    println!("Found period {}, {}", n, period);
-                    println!("heights {}, {}", height, h);
-                    println!("rounds {}", rounds );
                     let delta : i64 = height - h;
                     let rest : i64 = rounds as i64 - *n as i64;
                     let result = h + delta*(rest/period);
