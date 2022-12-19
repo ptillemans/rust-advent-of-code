@@ -1,5 +1,4 @@
-use std::str::FromStr;
-use std::collections::HashMap;
+use std::{str::FromStr, ops::{Add, Sub, Index, IndexMut}, collections::HashMap};
 use nom::{
     IResult, Parser, 
     sequence::{separated_pair, tuple},
@@ -11,7 +10,7 @@ use nom::{
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct InputModel  {
-    blueprints: Vec<BluePrint>,
+    pub blueprints: Vec<BluePrint>,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -31,13 +30,105 @@ impl FromStr for InputModel {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
-enum Resource {
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+pub enum Resource {
     Ore,
     Clay,
     Obsidian,
     Geode,
 }
+
+impl Resource {
+    const ALL: [Resource; 4] = [Resource::Ore, Resource::Clay, Resource::Obsidian, Resource::Geode];
+}
+
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct Inventory {
+    ore: u32,
+    clay: u32,
+    obsidian: u32,
+    geode: u32,
+}
+
+impl Inventory {
+    pub fn new() -> Self {
+        Inventory {
+            ore: 0,
+            clay: 0,
+            obsidian: 0,
+            geode: 0,
+        }
+    }
+   
+    fn add_resource(&mut self, index: Resource, value: u32) {
+        match index {
+            Resource::Ore => self.ore += value,
+            Resource::Clay => self.clay += value,
+            Resource::Obsidian => self.obsidian += value,
+            Resource::Geode => self.geode += value,
+        }
+    }
+    
+    fn remove_resource(&mut self, index: Resource, value: u32) {
+        match index {
+            Resource::Ore => self.ore -= value,
+            Resource::Clay => self.clay -= value,
+            Resource::Obsidian => self.obsidian -= value,
+            Resource::Geode => self.geode -= value,
+        }
+    }
+}
+
+impl Index<Resource> for Inventory {
+    type Output = u32;
+
+    fn index(&self, index: Resource) -> &Self::Output {
+        match index {
+            Resource::Ore => &self.ore,
+            Resource::Clay => &self.clay,
+            Resource::Obsidian => &self.obsidian,
+            Resource::Geode => &self.geode,
+        }
+    }
+}
+
+impl IndexMut<Resource> for Inventory {
+    fn index_mut(&mut self, index: Resource) -> &mut Self::Output {
+        match index {
+            Resource::Ore => &mut self.ore,
+            Resource::Clay => &mut self.clay,
+            Resource::Obsidian => &mut self.obsidian,
+            Resource::Geode => &mut self.geode,
+        }
+    }
+}
+
+impl Add for Inventory {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let mut result = self.clone();
+        for resource in Resource::ALL.iter() {
+            result[*resource] += rhs[*resource];
+        }
+        result
+    }
+}
+
+impl Sub for Inventory {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let mut result = self.clone();
+        for resource in Resource::ALL.iter() {
+            result.remove_resource(*resource, rhs[*resource]);
+        }
+        result
+    }
+
+}
+
 
 impl FromStr for Resource {
     type Err = AocError;
@@ -51,11 +142,12 @@ impl FromStr for Resource {
             _ => Err(AocError::ParseError),
         }
     }
+
 }
 
 
 #[derive(Debug, PartialEq, Eq)]
-struct Ingredient {
+pub struct Ingredient {
     resource: Resource,
     quantity: u32,
 }
@@ -74,10 +166,11 @@ impl Ingredient {
             Self::new(resource, quantity)
         }).parse(input)
     }
+
 }
 
 #[derive(Debug, PartialEq, Eq)]
-struct BluePrint {
+pub struct BluePrint {
     pub id: u32,
     pub recipes: HashMap<Resource, Vec<Ingredient>>,
 }
@@ -98,7 +191,63 @@ impl BluePrint {
             ).map(|v| v.into_iter().collect::<HashMap<_, _>>()),
         )).map(|(_, id, _, recipes )| { BluePrint::new(id, recipes) })
         .parse(input)
-    } 
+    }
+
+
+    pub fn best_geode_production(&self, period: usize) -> u32 {
+        #[derive(Debug, PartialEq, Eq, Clone)]
+        struct State {
+            period: usize,
+            robots: Inventory,
+            resources: Inventory,
+        }
+        let mut robots = Inventory::new();
+        robots.add_resource(Resource::Ore, 1);
+        let start = State {
+            period: 0,
+            robots,
+            resources: Inventory::new(),
+        };
+
+   
+        let mut open = vec![start];
+        let mut best = 0;
+
+        while !open.is_empty() {
+            let state = open.pop().unwrap();
+            if state.period == period {
+                let result = state.resources[Resource::Geode];
+                if result > best {
+                    best = result;
+                }
+                continue
+            }
+
+            // check if we can build some robots
+            self.recipes.iter()
+                .filter(|(_, ingredients)| ingredients.iter().all(|ingredient| 
+                    state.resources[ingredient.resource] >= ingredient.quantity))
+                .for_each(|(robot, ingredients)| {
+                    let mut new_state = state.clone();
+                    new_state.period += 1;
+                    new_state.robots[*robot] += 1;
+                    for ingredient in ingredients.iter() {
+                        new_state.resources[ingredient.resource] -= ingredient.quantity;
+                    }
+                    open.push(new_state);
+                });
+        }
+
+        best
+    }
+
+    pub fn quality(&self) -> u32 {
+        self.max_geodes() * self.id 
+    }
+
+    fn max_geodes(&self) -> u32 {
+        self.best_geode_production(24)
+    }
 }
 
 
@@ -114,6 +263,13 @@ fn recipe_parser(input: &str) -> IResult<&str, (Resource, Vec<Ingredient>)> {
         tag("."),
     )).map(|(_, target, _, ingredients, _)| (target, ingredients))
     .parse(input)
+}
+
+pub const TEST_INPUT: &str = "Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.
+Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.";
+
+pub fn test_input() -> InputModel {
+    TEST_INPUT.parse().unwrap()
 }
 
 #[cfg(test)]
@@ -134,4 +290,19 @@ mod tests {
         assert_eq!(rest, "");
         assert_eq!(actual, expected);
     }
+
+    #[test]
+    fn test_parse_inputmodel() {
+        let actual = test_input().blueprints.len();
+        assert_eq!(actual, 2);
+    }
+
+    #[test]
+    fn test_quality() {
+        let actual = test_input().blueprints[0].quality();
+        assert_eq!(actual, 9);
+        let actual = test_input().blueprints[1].quality();
+        assert_eq!(actual, 24);
+    }
+
 }

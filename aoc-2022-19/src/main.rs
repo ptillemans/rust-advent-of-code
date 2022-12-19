@@ -1,20 +1,15 @@
 #![feature(test)]
-use std::collections::HashMap;
 
-use aoc_2022_19::{AocError, InputModel};
-use nom::{
-    IResult, Parser, 
-    sequence::tuple,
-    branch::alt,
-    bytes::complete::tag,
-    character::complete::{alpha1, digit1},
-};
+use aoc_2022_19::*;
 
 const INPUT: &str = include_str!("../data/input.txt");
 
 
 fn part1(_input: &InputModel) -> Result<String,AocError> {
-    return Ok("Not implemented".to_string())
+    let qualities: Vec<u32> = _input.blueprints.iter()
+        .map(BluePrint::quality)
+        .collect();
+    Ok(qualities.iter().sum::<u32>().to_string())
 }
 
 fn part2(_input: &InputModel) -> Result<String, AocError> {
@@ -31,84 +26,15 @@ fn main() -> Result<(), AocError> {
     Ok(())
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
-enum Resource {
-    Ore,
-    Clay,
-    Obsidian,
-    Geode,
-}
-
-impl FromStr for Resource {
-    fn from_str(s: &str) -> Result<Self, AocError> {
-        match s {
-            "ore" => Ok(Resource::Ore),
-            "clay" => Ok(Resource::Clay),
-            "obsidian" => Ok(Resource::Obsidian),
-            "geode" => Ok(Resource::Geode),
-            _ => Err(AocError::ParseError),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Eq)]
-struct BluePrint {
-    pub id: u32,
-    pub name: String,
-    pub recipes: HashMap<Resource, u32>,
-}
-
-impl BluePrint {
-    pub fn new(name: String, recipes: HashMap<Resource, u32>) -> Self {
-        Self { name, recipes }
-    }
-
-    pub fn parser(input: &str) -> IResult<&str, Self> {
-        tuple((
-            tag("Blueprint "),
-            digit1.map(|s: &str| s.parse::<u32>().unwrap()),
-            tag(": "),
-            separated_list1(
-                tag(" "), 
-                tuple((
-                    digit1.map(|s: &str| s.parse::<u32>().unwrap()),
-                    recipe_parser,
-                ))
-        )).map(|(_, id, _ ))| {
-        
-}
-
-
-fn recipe_parser(input: &str) -> IResult<&str, Self> {
-    alt((
-        tuple((
-            tag("Each "),
-            digit1.map(|s: &str| s.parse::<Resource>().unwrap()),
-
-            tag("costs "),
-            digit1.map(|s: &str| s.parse::<u32>().unwrap()),
-            tag(" "),
-            alpha1.map(|s: &str| s.to_string()),
-        )).map(|(_, cost, _, name)| (name, cost)),
-        tuple((
-            digit1.map(|s: &str| s.parse::<u32>().unwrap()),
-            tag(" "),
-            alpha1.map(|s: &str| s.to_string()),
-        )).map(|(cost, _, name)| (name, cost)),
-    )).map(|(name, cost)| (Resource::from(name), cost))
-}
-
 #[cfg(test)]
 mod tests {
     extern crate test;
     use super::*;
     use test::Bencher;
 
-    const TEST_INPUT: &str = "";
 
     pub fn input_data() -> InputModel {
-        InputModel {
-        }
+        return TEST_INPUT.parse::<InputModel>().unwrap();
     }
 
     #[test]
