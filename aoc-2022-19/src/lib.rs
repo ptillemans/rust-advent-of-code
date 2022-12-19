@@ -5,12 +5,10 @@ use nom::{
     sequence::{separated_pair, tuple},
     IResult, Parser,
 };
-use std::cmp::{max, min};
-use std::collections::HashSet;
 use std::{
     collections::HashMap,
     ops::{Add, Index, IndexMut, Sub},
-    str::FromStr,
+    str::FromStr, cmp::Ordering,
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -45,10 +43,10 @@ pub enum Resource {
 
 impl Resource {
     const ALL: [Resource; 4] = [
-        Resource::Ore,
-        Resource::Clay,
-        Resource::Obsidian,
         Resource::Geode,
+        Resource::Obsidian,
+        Resource::Clay,
+        Resource::Ore,
     ];
 }
 
@@ -210,73 +208,66 @@ impl BluePrint {
         let mut start = Factory::new();
         start.robots.add_resource(Resource::Ore, 1);
 
-        let mut open = Vec::new();
-        open.push((0, start));
+        let mut open = Vec::with_capacity(10000);
+        open.push(start);
         let mut best = start;
 
-        let mut counter = 0;
-        while !open.is_empty() {
-            counter += 1;
-            let (time, state) = open.pop().unwrap();
+        let max_needed : HashMap<Resource, u32> = Resource::ALL.iter()
+            .map(|r| (*r, self.recipes.values()
+                      .map(|v| v[*r])
+                      .max().unwrap_or(0)))
+            .collect();
+        //println!("max_needed: {:?}", max_needed);
 
-            if time >= period {
-                let result = state;
-                if result.resources > best.resources {
-                    best = result;
-                }
-                continue;
-            }
-
-            let time_remaining = (period - time) as u32;
-            let max_geodes = state.resources.geode + min(1,state.resources.geode)*time_remaining*(time_remaining+1)/2;
-            if max_geodes < best.resources.geode {
-                continue;
-            }
-
-            // check if we can build some robots
-            let mut skip = None;
-            Resource::ALL
-                .iter()
-                .filter_map(|resource| {
-                    state
-                        .earliest_production(self.recipes.get(resource).unwrap())
-                        .map(|t| (resource, t))
-                })
-                .for_each(|(resource, t)| {
-                    let mut new_state = state;
-                    for _ in 0..t {
-                        new_state.resources = new_state.resources + state.robots;
+        for time in 0..period {
+            let mut new_open = Vec::with_capacity(10000);
+            while !open.is_empty() {
+                let factory = open.pop().unwrap();
+                // check if we can produce a robot
+                let can_make: Vec<Resource> = self.recipes.iter()
+                    .filter(|(_, inventory)| factory.resources.has_all_resources(inventory))
+                    .map(|(resource, _)| *resource)
+                    .collect();
+                for resource in can_make.iter() {
+                    // no need for more robots than to produce the most needed 
+                    if max_needed[resource] <= factory.robots[*resource] && *resource != Resource::Geode {
+                        continue;
                     }
-                    new_state.resources =
-                        new_state.resources - *self.recipes.get(resource).unwrap();
-                    new_state.robots.add_resource(*resource, 1);
-                    let new_time = time + t;
-                    if new_time <= period {
-                        open.push((new_time, new_state));
+                    let inventory = self.recipes.get(resource).unwrap();
+                    if factory.resources.has_all_resources(inventory) {
+                        let factory = factory.produce_robot(resource, inventory);
+                        new_open.push(factory);
+
+                        // build geode robot if we can
+                        if resource == &Resource::Geode {
+                            break;
+                        }
+                    } else {
                     }
-                    skip = skip.or(Some(t)).map(|x| min(x, t));
-                });
-
-            let mut new_state = state;
-            let mut new_time = time;
-            if let Some(t) = skip {
-                let t = min(t, period - time);
-
-                for _ in 0..t {
-                    new_state = new_state.produce_nothing();
-                    new_time += 1;
                 }
-            } else {
-                new_state = new_state.produce_nothing();
-                new_time += 1;
+
+                // do not pile resources if we can build can_build_anything
+                if can_make.len() < 4 {
+                    new_open.push(factory.produce_nothing());
+                }
+
+
             }
-            if time <= period {
-                open.push((new_time, new_state));
+
+            //println!("{}: {} factories", time, new_open.len());
+
+            new_open.sort();
+            open = last_n(new_open, 10000);
+            
+            if let Some(factory) = open.last() {
+                if factory.resources.geode > best.resources.geode {
+                    best = *factory;
+                    //println!("New best {}: {:?}", time, best);
+                }
             }
         }
 
-        println!("Best result: {:?}", best);
-        println!("Counter: {}", counter);
+        println!("Best result for blueprint {} : {:?}", self.id,  best.resources.geode);
         best
     }
 
@@ -289,17 +280,25 @@ impl BluePrint {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Ord, PartialOrd, Hash)]
+fn last_n<T: Clone>(v: Vec<T>, n: usize) -> Vec<T> {
+    let l = v.len();
+    if l > n {
+        (v[l - n..]).to_vec()
+    } else {
+        v
+    }
+}
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Factory {
-    resources: Inventory,
     robots: Inventory,
+    resources: Inventory,
 }
 
 impl Factory {
     fn new() -> Self {
         Self {
-            robots: Inventory::new(),
             resources: Inventory::new(),
+            robots: Inventory::new(),
         }
     }
 
@@ -316,21 +315,24 @@ impl Factory {
         result
     }
 
-    fn earliest_production(&self, ingredients: &Inventory) -> Option<usize> {
-        let mut result = 1;
-        for resource in Resource::ALL.iter() {
-            if ingredients[*resource] > 0 && self.robots[*resource] == 0 {
-                return None;
-            }
-            let available = self.resources[*resource];
-            let needed = ingredients[*resource];
-            let production_rate = self.robots[*resource];
-            if needed > available {
-                let time = 1 + (needed - available + production_rate - 1) / production_rate;
-                result = std::cmp::max(result, time);
-            }
-        }
-        Some(result as usize)
+}
+
+impl PartialOrd for Factory {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Factory {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.resources.geode.cmp(&other.resources.geode)
+        .then(self.robots.geode.cmp(&other.robots.geode))
+        .then(self.resources.obsidian.cmp(&other.resources.obsidian))
+        .then(self.robots.obsidian.cmp(&other.robots.obsidian))
+        .then(self.resources.clay.cmp(&other.resources.clay))
+        .then(self.robots.clay.cmp(&other.robots.clay))
+        .then(self.resources.ore.cmp(&other.resources.ore))
+        .then(self.robots.ore.cmp(&other.robots.ore))
     }
 }
 
@@ -415,13 +417,14 @@ mod tests {
         assert_eq!(actual, 2);
     }
 
-    //#[test]
+    #[test]
     fn test_quality() {
         let actual = test_input().blueprints[0].quality();
         assert_eq!(actual, 9);
         let actual = test_input().blueprints[1].quality();
         assert_eq!(actual, 24);
     }
+
     #[test]
     fn test_factory_production() {
         let blueprint = test_input().blueprints[0].clone();
@@ -633,212 +636,24 @@ mod tests {
     }
 
     #[test]
-    fn test_earliest_production() {
-        let blueprint = test_input().blueprints[0].clone();
-        let mut factory = Factory::new();
-        factory.robots.add_resource(Resource::Ore, 1);
-
-        assert_eq!(
-            factory.earliest_production(&blueprint.recipes[&Resource::Ore]),
-            Some(5)
-        );
-        assert_eq!(
-            factory.earliest_production(&blueprint.recipes[&Resource::Clay]),
-            Some(3)
-        );
-        assert_eq!(
-            factory.earliest_production(&blueprint.recipes[&Resource::Obsidian]),
-            None
-        );
-        assert_eq!(
-            factory.earliest_production(&blueprint.recipes[&Resource::Geode]),
-            None
-        );
-
-        factory.resources.add_resource(Resource::Ore, 1); // ensure sufficient ore
-        assert_eq!(
-            factory.earliest_production(&blueprint.recipes[&Resource::Clay]),
-            Some(2)
-        );
-        factory.resources.add_resource(Resource::Ore, 1); // ensure sufficient ore
-        assert_eq!(
-            factory.earliest_production(&blueprint.recipes[&Resource::Clay]),
-            Some(1)
-        );
-        factory.resources.add_resource(Resource::Ore, 1); // ensure sufficient ore
-        assert_eq!(
-            factory.earliest_production(&blueprint.recipes[&Resource::Clay]),
-            Some(1)
-        );
-
-        factory.robots.add_resource(Resource::Clay, 1);
-        assert_eq!(
-            factory.earliest_production(&blueprint.recipes[&Resource::Obsidian]),
-            Some(15)
-        );
-        assert_eq!(
-            factory.earliest_production(&blueprint.recipes[&Resource::Geode]),
-            None
-        );
-
-        factory.robots.add_resource(Resource::Clay, 1);
-        assert_eq!(
-            factory.earliest_production(&blueprint.recipes[&Resource::Obsidian]),
-            Some(8)
-        );
-        assert_eq!(
-            factory.earliest_production(&blueprint.recipes[&Resource::Geode]),
-            None
-        );
-
-        factory.robots.add_resource(Resource::Obsidian, 1);
-        assert_eq!(
-            factory.earliest_production(&blueprint.recipes[&Resource::Geode]),
-            Some(8)
-        );
-
-        factory.resources.add_resource(Resource::Obsidian, 6);
-        assert_eq!(
-            factory.earliest_production(&blueprint.recipes[&Resource::Geode]),
-            Some(2)
-        );
-        factory.resources.add_resource(Resource::Obsidian, 1);
-        assert_eq!(
-            factory.earliest_production(&blueprint.recipes[&Resource::Geode]),
-            Some(1)
-        );
-    
-        // end minute 19
-        factory.resources = Inventory {
-            ore: 3,
-            clay: 21,
-            obsidian: 5,
-            geode: 1
-        };
-        assert_eq!(
-            factory.earliest_production(&blueprint.recipes[&Resource::Geode]),
-            Some(2)
-        );
-        
-
-    }
-
-    #[test]
-    fn test_best_production() {
-        let actual = test_input().blueprints[0].best_production(2);
-        println!("actual : {:?}", actual);
-        assert_eq!(
-            actual.robots,
-            Inventory {
-                ore: 1,
-                clay: 0,
-                obsidian: 0,
-                geode: 0
-            }
-            );
-        assert_eq!(
-            actual.resources,
-            Inventory {
-                ore: 2,
-                clay: 0,
-                obsidian: 0,
-                geode: 0
-            }
-            );
-        let actual = test_input().blueprints[0].best_production(4);
-        println!("actual : {:?}", actual);
-        assert_eq!(
-            actual.robots,
-            Inventory {
-                ore: 1,
-                clay: 1,
-                obsidian: 0,
-                geode: 0
-            }
-            );
-        assert_eq!(
-            actual.resources,
-            Inventory {
-                ore: 2,
-                clay: 1,
-                obsidian: 0,
-                geode: 0
-            }
-            );
-    }
-
-    #[test]
-    fn test_best_production_3() {
-        let actual = test_input().blueprints[0].best_production(8);
-        println!("actual : {:?}", actual);
-        assert_eq!(
-            actual.robots,
-            Inventory {
-                ore: 1,
-                clay: 3,
-                obsidian: 0,
-                geode: 0
-            }
-            );
-        assert_eq!(
-            actual.resources,
-            Inventory {
-                ore: 2,
-                clay: 9,
-                obsidian: 0,
-                geode: 0
-            }
-            );
-        let actual = test_input().blueprints[0].best_production(12);
-        println!("actual : {:?}", actual);
-        assert_eq!(
-            actual.robots,
-            Inventory {
-                ore: 1,
-                clay: 3,
-                obsidian: 1,
-                geode: 0
-            }
-            );
-        assert_eq!(
-            actual.resources,
-            Inventory {
-                ore: 3,
-                clay: 7,
-                obsidian: 1,
-                geode: 0
-            }
-            );
-    }
-
-    #[test]
-    fn test_max_geode() {
+    fn test_max_geode_1() {
 
         let blueprint = test_input().blueprints;
 
-        for i in 1..=24 {
-            let actual = blueprint[0].max_geodes(i);
-            println!("actual({}) : {:?}", i, actual);
-        }
+        let actual = blueprint[0].max_geodes(24);
+        println!("actual max geode : {:?}",  actual);
+        assert_eq!(actual, 9);
     }
 
-    //#[test]
-    fn test_best_geode_production() {
-        println!("test_best_geode_production");
+    #[test]
+    fn test_max_geode_2() {
 
-        let actual = test_input().blueprints[0].best_production(24);
-        println!("actual : {:?}", actual);
+        let blueprint = test_input().blueprints;
 
-        let actual = test_input().blueprints[1].best_production(24);
-        println!("actual : {:?}", actual);
-
-        let actual = test_input().blueprints.iter()
-            .map(|b| b.best_production(24))
-            .map(|f| f.resources.geode)
-            .collect::<Vec<_>>();
-        let expected = vec![9, 12];
-
-        assert_eq!(actual, expected);
+        let actual = blueprint[1].max_geodes(24);
+        println!("actual max geode : {:?}",  actual);
+        assert_eq!(actual, 12);
     }
+
 
 }
