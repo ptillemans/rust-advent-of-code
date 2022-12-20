@@ -9,17 +9,18 @@ fn part1(input: &InputModel) -> Result<String,AocError> {
     Ok(code_ring.decode().to_string())
 }
 
-fn part2(_input: &InputModel) -> Result<String, AocError> {
-    Ok("Not implemented".to_string())
+fn part2(input: &InputModel) -> Result<String, AocError> {
+    let mut code_ring = CodeRing::new(input.coordinates.clone());
+    Ok(code_ring.decode_2().to_string())
 }
 
 fn main() -> Result<(), AocError> {
     let input:InputModel = INPUT.parse::<InputModel>()?;
     let part1_result = part1(&input)?;
-    println!("Part1: {}", part1_result);
+    println!("Part1: {part1_result}");
     println!("--------------");
     let part2_result = part2(&input)?;
-    println!("Part2: {}", part2_result);
+    println!("Part2: {part2_result}");
     Ok(())
 }
 
@@ -40,7 +41,7 @@ mod tests {
     #[test]
     fn test_part1() {
         let actual = part1(&input_data()).unwrap();
-        let expected = "2";
+        let expected = "3";
 
         assert_eq!(actual, expected);
     }
@@ -48,7 +49,7 @@ mod tests {
     #[test]
     fn test_part2() {
         let actual = part2(&input_data()).unwrap();
-        let expected = "";
+        let expected = "1623178306";
 
         assert_eq!(actual, expected);
     }
