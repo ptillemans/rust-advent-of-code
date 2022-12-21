@@ -26,7 +26,7 @@ impl FromStr for InputModel {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let result = separated_list1(pair(newline, newline), Monkey::parser)(s)
             .map_err(|_| AocError::ParseError);
-        let (remaining, monkeys) = result?;
+        let (_remaining, monkeys) = result?;
 
         Ok(InputModel { monkeys })  
     }
