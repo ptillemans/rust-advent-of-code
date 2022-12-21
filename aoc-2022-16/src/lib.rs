@@ -305,9 +305,7 @@ pub fn best_path(valves: &[Valve], start: &ValveId, time: u32) -> u32{
     let mut open = vec![(vec![start.clone()], vec![(0, time)], 0, time)];
     let mut best = (vec![], vec![], 0, 0);
 
-    let mut counter = 0;
     while !open.is_empty() {
-        counter += 1;
         let (path, contrib, pressure, time_remaining) = open.pop().unwrap();
         if pressure > best.2 {
             best = (path.clone(), contrib.clone(), pressure, time_remaining);
@@ -331,8 +329,6 @@ pub fn best_path(valves: &[Valve], start: &ValveId, time: u32) -> u32{
         }
     };
 
-    println!("counter: {}", counter);
-    
     best.2
 }
 
@@ -340,10 +336,6 @@ pub fn best_path2(valves: &[Valve], start: &ValveId, time: u32) -> u32{
 
     let valves = extend_distances(&simplify(valves));
 
-    let active_valves: usize = valves.iter()
-        .filter(|v| v.flow > 0)
-        .count();
-    
     let valve_map: HashMap<ValveId, Valve> = valves.iter()
         .map(|v| (v.id.clone(), v.clone()))
         .collect();
@@ -351,9 +343,7 @@ pub fn best_path2(valves: &[Valve], start: &ValveId, time: u32) -> u32{
     let mut open = vec![(vec![start.clone()], 0, time, vec![start.clone()], 0, time)];
     let mut best = (vec![], 0, 0, vec![], 0, 0);
 
-    let mut counter = 0;
     while !open.is_empty() {
-        counter += 1;
         let (path_h, pressure_h, time_remaining_h, path_e, pressure_e, time_remaining_e) = open.pop().unwrap();
         if pressure_h + pressure_e  > best.1 + best.4 {
             best = (path_h.clone(), pressure_h, time_remaining_h, path_e.clone(), pressure_e, time_remaining_e);
@@ -391,8 +381,6 @@ pub fn best_path2(valves: &[Valve], start: &ValveId, time: u32) -> u32{
             }
         };
     };
-
-    println!("counter: {}", counter);
 
     best.1 + best.4
 }

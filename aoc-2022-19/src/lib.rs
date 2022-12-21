@@ -219,7 +219,7 @@ impl BluePrint {
                       .max().unwrap_or(0)))
             .collect();
 
-        for time in 0..period {
+        for _ in 0..period {
             let mut new_open = Vec::with_capacity(10000);
             while !open.is_empty() {
                 let factory = open.pop().unwrap();
@@ -641,7 +641,7 @@ mod tests {
         let blueprint = test_input().blueprints;
 
         let actual = blueprint[0].max_geodes(24);
-        println!("actual max geode : {:?}",  actual);
+        println!("actual max geode : {actual:?}");
         assert_eq!(actual, 9);
     }
 
@@ -651,7 +651,7 @@ mod tests {
         let blueprint = test_input().blueprints;
 
         let actual = blueprint[1].max_geodes(24);
-        println!("actual max geode : {:?}",  actual);
+        println!("actual max geode : {actual:?}");
         assert_eq!(actual, 12);
     }
 
