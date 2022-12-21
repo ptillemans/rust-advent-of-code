@@ -212,12 +212,12 @@ impl BluePrint {
         open.push(start);
         let mut best = start;
 
+        // keep a list of maximums inputs for each recipe per resource
         let max_needed : HashMap<Resource, u32> = Resource::ALL.iter()
             .map(|r| (*r, self.recipes.values()
                       .map(|v| v[*r])
                       .max().unwrap_or(0)))
             .collect();
-        //println!("max_needed: {:?}", max_needed);
 
         for time in 0..period {
             let mut new_open = Vec::with_capacity(10000);
@@ -257,7 +257,7 @@ impl BluePrint {
             //println!("{}: {} factories", time, new_open.len());
 
             new_open.sort();
-            open = last_n(new_open, 10000);
+            open = last_n(new_open, 3000);
             
             if let Some(factory) = open.last() {
                 if factory.resources.geode > best.resources.geode {
@@ -275,7 +275,7 @@ impl BluePrint {
         self.max_geodes(24) * self.id
     }
 
-    fn max_geodes(&self, rounds: usize) -> u32 {
+    pub fn max_geodes(&self, rounds: usize) -> u32 {
         self.best_production(rounds).resources.geode
     }
 }

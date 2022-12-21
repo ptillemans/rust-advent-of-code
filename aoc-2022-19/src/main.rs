@@ -13,7 +13,11 @@ fn part1(_input: &InputModel) -> Result<String,AocError> {
 }
 
 fn part2(_input: &InputModel) -> Result<String, AocError> {
-    return Ok("Not implemented".to_string())
+    let qualities: Vec<u32> = _input.blueprints.iter()
+        .take(3)
+        .map(|blue_print| blue_print.max_geodes(32))
+        .collect();
+    Ok(qualities.iter().product::<u32>().to_string())
 }
 
 fn main() -> Result<(), AocError> {
@@ -34,7 +38,7 @@ mod tests {
 
 
     pub fn input_data() -> InputModel {
-        return TEST_INPUT.parse::<InputModel>().unwrap();
+        TEST_INPUT.parse::<InputModel>().unwrap()
     }
 
     #[test]
@@ -55,25 +59,31 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        let actual = part2(&input_data()).unwrap();
-        let expected = "33";
-
+        let blue_prints = input_data().blueprints;
+        let actual = blue_prints[0].max_geodes(32);
+        let expected = 56;
+        assert_eq!(actual, expected);
+        
+        let actual = blue_prints[1].max_geodes(32);
+        let expected = 62;
         assert_eq!(actual, expected);
     }
     
     #[bench]
     fn bench_parse(b: &mut Bencher) {
-        b.iter(|| TEST_INPUT.parse::<InputModel>().unwrap())
+        b.iter(|| INPUT.parse::<InputModel>().unwrap())
     }
 
     #[bench]
     fn bench_part1(b: &mut Bencher) {
-        b.iter(|| part1(&input_data()))
+        let input = INPUT.parse::<InputModel>().unwrap();
+        b.iter(|| part1(&input))
     }
 
     #[bench]
     fn bench_part2(b: &mut Bencher) {
-        b.iter(|| part2(&input_data()))
+        let input = INPUT.parse::<InputModel>().unwrap();
+        b.iter(|| part2(&input))
     }
 
 }
