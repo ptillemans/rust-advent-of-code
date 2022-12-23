@@ -1,0 +1,379 @@
+use itertools::Itertools;
+use std::collections::HashMap;
+
+use aoc_common::position::Position;
+use ndarray::{array, Array2};
+
+use crate::{
+    grid::{Direction, Grid, Tile, Move},
+    AocError, InputModel,
+};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CubePosition {
+    face_id: usize,
+    position: Position,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CubeSide {
+    id: usize,
+    grid: Grid,
+    face_position: Position,
+}
+
+impl CubeSide {
+    pub fn new(id: usize, grid: Grid, face_position: Position) -> Self {
+        Self {
+            id,
+            grid,
+            face_position,
+        }
+    }
+
+    fn get_tile(&self, position: Position) -> Tile {
+        let (x, y) = (position.x, position.y);
+        if y < 0 || y >= self.grid.len() as i32 {
+            return Tile::Void;
+        }
+        let row = &self.grid[y as usize];
+        if x < 0 || x >= row.len() as i32 {
+            return Tile::Void;
+        }
+        self.grid[position.y as usize][position.x as usize]
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
+enum Rotation {
+    Straight,
+    Flip,
+    Clockwise,
+    CounterClockwise,
+}
+
+impl From<Rotation> for Array2<i32> {
+    fn from(rotation: Rotation) -> Self {
+        match rotation {
+            Rotation::Straight => array![[1, 0], [0, 1]],
+            Rotation::Flip => array![[-1, 0], [0, -1]],
+            Rotation::Clockwise => array![[0, 1], [-1, 0]],
+            Rotation::CounterClockwise => array![[0, -1], [1, 0]],
+        }
+    }
+}
+
+impl Rotation {
+
+    fn apply_dir(&self, dir: Direction) -> Direction {
+        match self {
+            Rotation::Straight => dir,
+            Rotation::Flip => dir.turn(Move::TurnLeft).turn(Move::TurnLeft),
+            Rotation::Clockwise => dir.turn(Move::TurnRight),
+            Rotation::CounterClockwise => dir.turn(Move::TurnLeft),
+        }
+    }
+
+    fn apply_rot(&self, rot: Rotation) -> Rotation {
+        match (self, rot) {
+            (Rotation::Straight, Rotation::Straight) => Rotation::Straight,
+            (Rotation::Straight, Rotation::Flip) => Rotation::Flip,
+            (Rotation::Straight, Rotation::Clockwise) => Rotation::Clockwise,
+            (Rotation::Straight, Rotation::CounterClockwise) => Rotation::CounterClockwise,
+            (Rotation::Flip, Rotation::Straight) => Rotation::Flip,
+            (Rotation::Flip, Rotation::Flip) => Rotation::Straight,
+            (Rotation::Flip, Rotation::Clockwise) => Rotation::CounterClockwise,
+            (Rotation::Flip, Rotation::CounterClockwise) => Rotation::Clockwise,
+            (Rotation::Clockwise, Rotation::Straight) => Rotation::Clockwise,
+            (Rotation::Clockwise, Rotation::Flip) => Rotation::CounterClockwise,
+            (Rotation::Clockwise, Rotation::Clockwise) => Rotation::Flip,
+            (Rotation::Clockwise, Rotation::CounterClockwise) => Rotation::Straight,
+            (Rotation::CounterClockwise, Rotation::Straight) => Rotation::CounterClockwise,
+            (Rotation::CounterClockwise, Rotation::Flip) => Rotation::Clockwise,
+            (Rotation::CounterClockwise, Rotation::Clockwise) => Rotation::Straight,
+            (Rotation::CounterClockwise, Rotation::CounterClockwise) => Rotation::Flip,
+        }
+    }
+
+    fn inverse(&self) -> Rotation {
+        match self {
+            Rotation::Straight => Rotation::Straight,
+            Rotation::Flip => Rotation::Flip,
+            Rotation::Clockwise => Rotation::CounterClockwise,
+            Rotation::CounterClockwise => Rotation::Clockwise,
+        }
+    }
+
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CubeLink {
+    to: usize,
+    rotation: Rotation,
+}
+
+impl CubeLink {
+    fn new(
+        to: usize,
+        rotation: Rotation,
+    ) -> Self {
+        Self {
+            to,
+            rotation,
+        }
+    }
+}
+
+type CubeLinks = HashMap<usize, HashMap<Direction, CubeLink>>;
+
+pub fn find_cube_sides(grid: &Grid, size: usize) -> Vec<CubeSide> {
+    let faces_h = grid.len() / size;
+    (0..grid.len())
+        .step_by(size)
+        .flat_map(|y| {
+            (0..grid[y].len()).step_by(size).map(move |x| (x, y))
+        })
+        .filter_map(|(x, y)| {
+            let face_position = Position::new(x as i32 / size as i32, y as i32 / size as i32);
+            let face_grid: Grid = (y..y + size)
+                .map(|y| grid[y][x..x + size].to_vec())
+                .collect::<Vec<Vec<Tile>>>()
+                .into();
+            if face_grid
+                .iter()
+                .all(|row| row.iter().any(|t| *t == Tile::Void))
+            {
+                None
+            } else {
+                let face_id = face_position.x * faces_h as i32 + face_position.y + 1;
+                Some(CubeSide::new(
+                    face_id as usize,
+                    face_grid,
+                    face_position,
+                ))
+            }
+        })
+        .collect::<Vec<CubeSide>>()
+}
+
+pub fn find_straight_links(sides: &[CubeSide]) -> CubeLinks {
+    let side_map: HashMap<Position, &CubeSide> =
+        sides.iter().map(|s| (s.face_position, s)).collect();
+    let straight_links = sides
+        .iter()
+        .map(|side| {
+            let links = Direction::iter().filter_map(|dir| {
+                let face_pos = dir.step(side.face_position);
+                if let Some(other) = side_map.get(&face_pos) {
+                    let link = CubeLink::new(other.id, Rotation::Straight);
+
+                    println!("link {} {:?} {link:?}", side.id, dir);
+                    Some((dir, link))
+                } else {
+                    None
+                }
+            }).collect::<HashMap<Direction, CubeLink>>();
+            (side.id, links)
+        }).collect::<CubeLinks>();
+
+    straight_links
+}
+
+fn find_rotation(dir1: Direction, dir2: Direction) -> Rotation {
+    match (dir1, dir2) {
+        (Direction::Up, Direction::Right) => Rotation::Clockwise,
+        (Direction::Right, Direction::Down) => Rotation::Clockwise,
+        (Direction::Down, Direction::Left) => Rotation::Clockwise,
+        (Direction::Left, Direction::Up) => Rotation::Clockwise,
+        (Direction::Up, Direction::Left) => Rotation::CounterClockwise,
+        (Direction::Left, Direction::Down) => Rotation::CounterClockwise,
+        (Direction::Down, Direction::Right) => Rotation::CounterClockwise,
+        (Direction::Right, Direction::Up) => Rotation::CounterClockwise,
+        (Direction::Up, Direction::Down) => Rotation::Straight,
+        (Direction::Down, Direction::Up) => Rotation::Straight,
+        (Direction::Left, Direction::Right) => Rotation::Straight,
+        (Direction::Right, Direction::Left) => Rotation::Straight,
+        (Direction::Down, Direction::Down) => Rotation::Flip,
+        (Direction::Up, Direction::Up) => Rotation::Flip,
+        (Direction::Left, Direction::Left) => Rotation::Flip,
+        (Direction::Right, Direction::Right) => Rotation::Flip,
+    }
+}
+
+fn neighbor_directions(dir1: Direction, dir2: Direction) -> bool {
+    matches!(
+        (dir1, dir2),
+        (Direction::Up, Direction::Right)
+            | (Direction::Right, Direction::Down)
+            | (Direction::Down, Direction::Left)
+            | (Direction::Left, Direction::Up)
+            | (Direction::Up, Direction::Left)
+            | (Direction::Left, Direction::Down)
+            | (Direction::Down, Direction::Right)
+            | (Direction::Right, Direction::Up)
+    )
+}
+
+fn add_links(sides: &[CubeSide], links: &CubeLinks, cube_size: usize) -> CubeLinks {
+    let mut links = links.clone();
+    let additional: Vec<(usize, Direction, Rotation, usize)> = sides
+        .iter()
+        .flat_map(|side| {
+            let start_links = links.get(&side.id).unwrap();
+            start_links.iter() 
+                .permutations(2)
+                .filter(|edges| neighbor_directions(*edges[0].0, *edges[1].0))
+                .map(|links| {
+                    let (dir1, link1) = links[0];
+                    let (dir2, link2) = links[1];
+                    println!("link {} links: {:?}", side.id, links);
+                    let rotation = find_rotation(*dir2, *dir1);
+                    // reverse rotation on link 1 and add rotation of link2
+                    let link_rot = link2.rotation.apply_rot(link1.rotation.inverse());
+                    // apply on the corner rotation
+                    let back_rotation = link_rot.apply_rot(rotation);
+                    println!("rotations: {:?} {:?} -> {:?}", link_rot, rotation, back_rotation);
+                    let dir = link1.rotation.inverse().apply_dir(*dir2);
+                    println!("dir: {:?} + {:?} -> {:?}", link1.rotation.inverse(), dir2, dir);
+                    let link = (link1.to, dir, back_rotation, link2.to);
+                    println!("link {}  {link:?}", side.id);
+                    link
+                })
+                .collect::<Vec<(usize, Direction, Rotation, usize)>>()
+        })
+        .collect();
+
+    additional.iter().for_each(|(from, direction, rotation, to)| {
+        let link = CubeLink::new(*to, *rotation);
+        let side = links.entry(*from).or_insert_with(HashMap::new);
+
+        side.entry(*direction).and_modify(|e| {
+            if *e != link {
+                println!("inconsisten links {e:?} <> {link:?}");
+                panic!("invalid link");
+            }
+        }).or_insert(link); 
+    });
+
+    links
+
+}
+
+pub fn find_cube_links(sides: &[CubeSide], cube_size: usize) -> CubeLinks {
+    let links = find_straight_links(sides);
+
+    let links = add_links(sides, &links, cube_size);
+    println!("");
+    println!("round 1 done");
+    println!("");
+    let links = add_links(sides, &links, cube_size);
+    println!("");
+    println!("round 2 done");
+    println!("");
+    let links = add_links(sides, &links, cube_size);
+    println!("");
+    println!("round 3 done");
+    println!("");
+    add_links(sides, &links, cube_size)
+}
+
+struct Cube {
+    size: usize,
+    sides: Vec<CubeSide>,
+    links: CubeLinks,
+}
+
+impl Cube {
+
+    pub fn new(grid: &Grid, size: usize) -> Self {
+        let sides = find_cube_sides(grid, size);
+        let links = find_cube_links(&sides, size);
+        Cube { size, sides, links }
+    }
+
+}
+
+
+struct CubeWalker {
+    cube: Cube,
+    face: usize,
+    position: Position,
+    direction: Direction,
+}
+
+impl CubeWalker {
+    pub fn new(cube: Cube, face: usize, position: Position, direction: Direction) -> Self {
+        CubeWalker { cube, face, position, direction }
+    }
+
+    pub fn walk(&mut self) {
+        let mut pos = self.direction.step(self.position);
+        if self.out_of_bounds(pos) {
+            pos = self.direction.inverse().steps(self.position, self.cube.size);
+            let link = self.cube.links.get(&self.face).unwrap().get(&self.direction).unwrap();
+            self.face = link.to;
+            self.direction = link.rotation.apply_dir(self.direction);
+            self.position = self.rotate_position(pos, link.rotation);
+        } else {
+            self.position = pos;
+        }
+    }
+
+    fn get_tile(&self) -> Tile {
+        self.cube.sides.get(self.face).unwrap().get_tile(self.position)
+    }
+
+    fn out_of_bounds(&self, pos: Position) -> bool {
+        pos.x < 0 || pos.x >= self.cube.size as i32 
+            || pos.y < 0 || pos.y >= self.cube.size as i32
+    }
+
+    fn rotate_position(&self, pos: Position, rotation: Rotation) -> Position {
+        let n = self.cube.size as i32 - 1;
+        match rotation {
+            Rotation::Straight => pos,
+            Rotation::Clockwise => Position::new(pos.y, n - pos.x),
+            Rotation::CounterClockwise => Position::new(n - pos.y, pos.x),
+            Rotation::Flip => Position::new(n - pos.y, n - pos.x),
+        }
+    }
+}
+pub fn cube_password(_input: &InputModel, _size: usize) -> Result<i32, AocError> {
+    Ok(0)
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::TEST_INPUT;
+
+    use super::*;
+
+    #[test]
+    fn read_cube_sides() {
+        let input = TEST_INPUT.parse::<InputModel>().unwrap();
+        let cubesides = find_cube_sides(&input.grid, 4);
+
+        assert_eq!(cubesides.len(), 6);
+    }
+
+    #[test]
+    fn test_find_straight_links() {
+        let input = TEST_INPUT.parse::<InputModel>().unwrap();
+        let cubesides = find_cube_sides(&input.grid, 4);
+
+        let links = find_straight_links(&cubesides);
+        assert_eq!(links.len(), 6);
+        assert_eq!(links.iter().flat_map(|(_,dir)| dir.keys()).count(), 10);
+    }
+
+    #[test]
+    fn read_cube_links() {
+        let input = TEST_INPUT.parse::<InputModel>().unwrap();
+        let cubesides = find_cube_sides(&input.grid, 4);
+
+        let links = find_cube_links(&cubesides, 4);
+        assert_eq!(links.len(), 6);
+        assert_eq!(links.iter().flat_map(|(_,dir)| dir.keys()).count(), 24);
+    }
+}

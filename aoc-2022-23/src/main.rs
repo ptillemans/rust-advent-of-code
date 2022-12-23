@@ -1,17 +1,24 @@
 #![feature(test)]
-use aoc_2022_22::*;
-use aoc_2022_22::part1::final_password;
-use aoc_2022_22::cube::cube_password;
+use std::iter::successors;
+
+use aoc_2022_23::*;
 
 const INPUT: &str = include_str!("../data/input.txt");
 
 
-fn part1(input: &InputModel) -> Result<String,AocError> {
-    Ok(final_password(input).unwrap().to_string())
+fn part1(_input: &InputModel) -> Result<String,AocError> {
+    let directions = successors(Some(Direction::North), 
+                                |d| Some(d.next_direction()));
+
+    let elves = directions
+        .take(10)
+        .fold(_input.elves.clone(), |elves, direction| do_round(&elves, &direction));
+
+    Ok(count_free_space(&elves).to_string())
 }
 
 fn part2(input: &InputModel) -> Result<String, AocError> {
-    Ok(cube_password(input, 50).unwrap().to_string())
+    Ok(count_rounds_till_stable(&input.elves).to_string())
 }
 
 fn main() -> Result<(), AocError> {
@@ -30,6 +37,14 @@ mod tests {
     use super::*;
     use test::Bencher;
 
+    const TEST_INPUT: &str = "....#..
+..###.#
+#...#.#
+.#...##
+#.###..
+##.#.##
+.#..#..";
+
     pub fn input_data() -> InputModel {
         TEST_INPUT.parse::<InputModel>().unwrap()
     }
@@ -45,7 +60,7 @@ mod tests {
     #[test]
     fn test_part1() {
         let actual = part1(&input_data()).unwrap();
-        let expected = "6032";
+        let expected = "110";
 
         assert_eq!(actual, expected);
     }
@@ -53,7 +68,7 @@ mod tests {
     #[test]
     fn test_part2() {
         let actual = part2(&input_data()).unwrap();
-        let expected = "";
+        let expected = "20";
 
         assert_eq!(actual, expected);
     }
