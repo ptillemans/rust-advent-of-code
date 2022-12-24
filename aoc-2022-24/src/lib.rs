@@ -2,7 +2,7 @@ use std::{str::FromStr, fmt::{Display, Formatter}};
 use aoc_common::position::Position;
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct InputModel  {
+pub struct Valley {
     start: Position,
     finish: Position,
     width: i32,
@@ -10,7 +10,7 @@ pub struct InputModel  {
     blizzards: Vec<Blizzard>,
 }
 
-impl Display for InputModel {
+impl Display for Valley {
 
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut lines = vec![vec!['.'; self.width as usize]; self.height as usize];
@@ -48,7 +48,7 @@ pub enum AocError {
     ParseError,
 }
         
-impl FromStr for InputModel {
+impl FromStr for Valley {
     type Err = AocError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -70,7 +70,7 @@ impl FromStr for InputModel {
                     })
                 })
             .collect();
-        Ok(InputModel {
+        Ok(Valley {
             start: Position::new(start_x as i32, 0),
             finish: Position::new(finish_y as i32, height - 1),
             width,
@@ -120,8 +120,8 @@ mod tests {
     #[test]
     fn test_parse() {
         let input = SIMPLE_INPUT;
-        let model = input.parse::<InputModel>().unwrap();
-        let expected = InputModel {
+        let model = input.parse::<Valley>().unwrap();
+        let expected = Valley {
             start: Position::new(1, 0),
             finish: Position::new(5, 6),
             width: 7,
@@ -139,7 +139,7 @@ mod tests {
     #[test]
     fn test_display() {
         let input = SIMPLE_INPUT;
-        let model = input.parse::<InputModel>().unwrap();
+        let model = input.parse::<Valley>().unwrap();
         let actual = format!("{model}");
         assert_eq!(actual.trim(), input);
     }
