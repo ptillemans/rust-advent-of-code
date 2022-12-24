@@ -140,7 +140,7 @@ mod tests {
     fn test_display() {
         let input = SIMPLE_INPUT;
         let model = input.parse::<InputModel>().unwrap();
-        let actual = format!("{}", model);
-        assert_eq!(actual, input);
+        let actual = format!("{model}");
+        assert_eq!(actual.trim(), input);
     }
 }
