@@ -29,6 +29,12 @@ impl Valley {
         }
         (x, y).into()
     }
+
+    fn has_blizzard(&self, pos: Position , time: i32) -> bool {
+        self.blizzards_positions(time).contains(&pos)
+    }
+
+
 }
 
 impl Display for Valley {
@@ -152,8 +158,6 @@ mod tests {
                 Blizzard::new(Position::new(4, 4), Direction::Down),
             ],
         };
-
-
         assert_eq!(model, expected);
     }
 
@@ -186,4 +190,14 @@ mod tests {
             .collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }
+
+    #[test]
+    fn test_has_blizzard() {
+        let model = SIMPLE_INPUT.parse::<Valley>().unwrap();
+        assert!(model.has_blizzard(Position::new(1, 2), 0));
+        assert!(!model.has_blizzard(Position::new(1, 2), 1));
+        assert!(model.has_blizzard(Position::new(2, 2), 1));
+        assert!(model.has_blizzard(Position::new(4, 2), 3));
+    }
+
 }
