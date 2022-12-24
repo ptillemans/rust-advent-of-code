@@ -1,4 +1,4 @@
-use std::{str::FromStr, fmt::{Display, Formatter}};
+use std::{str::FromStr, fmt::{Display, Formatter}, collections::{BinaryHeap, HashMap, HashSet}};
 use aoc_common::position::Position;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -30,10 +30,16 @@ impl Valley {
         (x, y).into()
     }
 
-    fn has_blizzard(&self, pos: Position , time: i32) -> bool {
-        self.blizzards_positions(time).contains(&pos)
+    fn is_free(&self, pos: Position , time: i32) -> bool {
+        // check for walls
+        (pos.x > 0 && pos.x < self.width - 1 
+         && pos.y > 0 && pos.y < self.height - 1
+         // check for blizzards
+         && !self.blizzards_positions(time).contains(&pos))
+        // except start and finish
+        || pos == self.start 
+        || pos == self.finish
     }
-
 
 }
 
@@ -130,6 +136,81 @@ impl Blizzard {
 }
 
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+struct Walker {
+    position: Position,
+    time: i32,
+}
+
+impl Walker {
+    fn new(valley: &Valley) -> Walker {
+        Walker {
+            position: valley.start,
+            time: 0,
+        }
+    }
+
+    fn next_moves(&self, valley: &Valley) -> Vec<Position> {
+        let (x, y) = self.position.into();
+        (x - 1..=x + 1)
+            .flat_map(|x| (y - 1..=y + 1).map(move |y| (x, y).into()))
+            .filter(|p| valley.is_free(*p, self.time))
+            .collect()
+    }
+
+    // use A* algorithm to find the shortest path
+    fn best_path(&self, valley: &Valley) -> Option<Vec<Position>> {
+        let mut open = BinaryHeap::new();
+        let mut closed = HashSet::new();
+        let mut came_from = HashMap::new();
+        let mut g_score = HashMap::new();
+        let mut f_score = HashMap::new();
+
+        fn reconstruct_path(came_from: &HashMap<Position, Position>, current: Position) -> Vec<Position> {
+            let mut path = vec![current];
+            let mut current = current;
+            while came_from.contains_key(&current) {
+                current = came_from[&current];
+                path.push(current);
+            }
+            path.reverse();
+            path
+        }
+
+        open.push((0, self.position));
+        g_score.insert(self.position, 0);
+        f_score.insert(self.position, self.position.manhattan(&valley.finish));
+        while let Some((time, current)) = open.pop() {
+            println!("current: {:?}", current);
+            let walker = Walker {
+                position: current,
+                time,
+            };
+            if current == valley.finish {
+                return Some(reconstruct_path(&came_from, current));
+            }
+            closed.insert(current);
+            println!("next moves: {:?}", self.next_moves(valley));
+            for next in walker.next_moves(valley) {
+                println!("next: {:?}", next);
+                if closed.contains(&next) {
+                    continue;
+                }
+                let tentative_g_score = g_score[&current] + 1;
+                println!("tentative_g_score: {}", tentative_g_score);
+                if tentative_g_score <= g_score.get(&next).copied().unwrap_or(i32::MAX) {
+                    println!("add position to open");
+                    came_from.insert(next, current);
+                    g_score.insert(next, tentative_g_score);
+                    f_score.insert(next, tentative_g_score + next.manhattan(&valley.finish));
+                    open.push((f_score[&next], next));
+                }
+            }
+        }
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -194,10 +275,44 @@ mod tests {
     #[test]
     fn test_has_blizzard() {
         let model = SIMPLE_INPUT.parse::<Valley>().unwrap();
-        assert!(model.has_blizzard(Position::new(1, 2), 0));
-        assert!(!model.has_blizzard(Position::new(1, 2), 1));
-        assert!(model.has_blizzard(Position::new(2, 2), 1));
-        assert!(model.has_blizzard(Position::new(4, 2), 3));
+        assert!(!model.is_free(Position::new(1, 2), 0));
+        assert!(model.is_free(Position::new(1, 2), 1));
+        assert!(!model.is_free(Position::new(2, 2), 1));
+        assert!(!model.is_free(Position::new(4, 2), 3));
     }
 
+    #[test]
+    fn test_walker_moves() {
+        let model = SIMPLE_INPUT.parse::<Valley>().unwrap();
+        let expected = vec![
+            Position::new(1,0), 
+            Position::new(1,1), 
+            Position::new(2,1)
+        ];
+        let actual = Walker::new(&model).next_moves(&model);
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_shortest_path() {
+        let model = SIMPLE_INPUT.parse::<Valley>().unwrap();
+        let mut walker = Walker::new(&model);
+        let actual = walker.best_path(&model).unwrap().len();
+        assert_eq!(actual, 10);
+    }
+
+    const COMPLEX_INPUT: &str = "#.######
+#>>.<^<#
+#.<..<<#
+#>v.><>#
+#<^v^^>#
+######.#";
+
+    #[test]
+    fn test_complex_shortest_path() {
+        let model = COMPLEX_INPUT.parse::<Valley>().unwrap();
+        let walker = Walker::new(&model);
+        let actual = walker.best_path(&model).unwrap().len();
+        assert_eq!(actual, 18);
+    }
 }

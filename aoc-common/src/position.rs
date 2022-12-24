@@ -21,6 +21,12 @@ impl <T> From<(T, T)> for Position
     }
 }
 
+impl From<Position> for (i32, i32) {
+    fn from(position: Position) -> Self {
+        (position.x, position.y)
+    }
+}
+
 impl Position {
 
     pub fn new(x: i32, y: i32) -> Position {
