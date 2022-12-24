@@ -170,16 +170,16 @@ mod tests {
         let input = SIMPLE_INPUT;
         let model = input.parse::<Valley>().unwrap();
         let expected= vec![
-            vec![Position::new(1,3), Position::new(5,4)],
-            vec![Position::new(1,4), Position::new(6,4)],
-            vec![Position::new(1,5), Position::new(1,4)],
-            vec![Position::new(1,6), Position::new(2,4)],
-            vec![Position::new(1,1), Position::new(3,4)],
             vec![Position::new(1,2), Position::new(4,4)],
-            vec![Position::new(1,3), Position::new(5,4)],
-            vec![Position::new(1,4), Position::new(6,4)],
-            vec![Position::new(1,5), Position::new(1,4)],
-            vec![Position::new(1,6), Position::new(2,4)],
+            vec![Position::new(2,2), Position::new(4,5)],
+            vec![Position::new(3,2), Position::new(4,1)],
+            vec![Position::new(4,2), Position::new(4,2)],
+            vec![Position::new(5,2), Position::new(4,3)],
+            vec![Position::new(1,2), Position::new(4,4)],
+            vec![Position::new(2,2), Position::new(4,5)],
+            vec![Position::new(3,2), Position::new(4,1)],
+            vec![Position::new(4,2), Position::new(4,2)],
+            vec![Position::new(5,2), Position::new(4,3)],
         ];
         let actual = (0..10)
             .map(|i| model.blizzards_positions(i))
