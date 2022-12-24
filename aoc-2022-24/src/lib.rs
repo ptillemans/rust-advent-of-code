@@ -10,6 +10,27 @@ pub struct Valley {
     blizzards: Vec<Blizzard>,
 }
 
+impl Valley {
+    pub(crate) fn blizzards_positions(&self, i: i32) -> Vec<Position> {
+        self.blizzards.iter()
+            .map(|b| self.blizzard_position(b, i))
+            .collect()
+    }
+
+    pub(crate) fn blizzard_position(&self, blizzard: &Blizzard, time: i32) -> Position {
+        let (mut x, mut y) = (blizzard.start.x, blizzard.start.y);
+        let floor_height = self.height - 2;
+        let floor_width = self.height - 2;
+        match blizzard.direction {
+            Direction::Up =>  y = (y - time - 1).rem_euclid(floor_height) + 1,
+            Direction::Down => y = (y + time - 1).rem_euclid(floor_height) + 1,
+            Direction::Left => x = (x - time - 1).rem_euclid(floor_width) + 1,
+            Direction::Right => x = (x + time - 1).rem_euclid(floor_width) + 1,
+        }
+        (x, y).into()
+    }
+}
+
 impl Display for Valley {
 
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -142,5 +163,27 @@ mod tests {
         let model = input.parse::<Valley>().unwrap();
         let actual = format!("{model}");
         assert_eq!(actual.trim(), input);
+    }
+
+    #[test]
+    fn test_blizzard_position() {
+        let input = SIMPLE_INPUT;
+        let model = input.parse::<Valley>().unwrap();
+        let expected= vec![
+            vec![Position::new(1,3), Position::new(5,4)],
+            vec![Position::new(1,4), Position::new(6,4)],
+            vec![Position::new(1,5), Position::new(1,4)],
+            vec![Position::new(1,6), Position::new(2,4)],
+            vec![Position::new(1,1), Position::new(3,4)],
+            vec![Position::new(1,2), Position::new(4,4)],
+            vec![Position::new(1,3), Position::new(5,4)],
+            vec![Position::new(1,4), Position::new(6,4)],
+            vec![Position::new(1,5), Position::new(1,4)],
+            vec![Position::new(1,6), Position::new(2,4)],
+        ];
+        let actual = (0..10)
+            .map(|i| model.blizzards_positions(i))
+            .collect::<Vec<_>>();
+        assert_eq!(actual, expected);
     }
 }
