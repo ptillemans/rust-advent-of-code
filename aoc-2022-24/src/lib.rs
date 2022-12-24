@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{str::FromStr, fmt::{Display, Formatter}};
 use aoc_common::position::Position;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -9,6 +9,38 @@ pub struct InputModel  {
     height: i32,
     blizzards: Vec<Blizzard>,
 }
+
+impl Display for InputModel {
+
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut lines = vec![vec!['.'; self.width as usize]; self.height as usize];
+        (0..self.width as usize).for_each(|x| {
+            lines[0][x] = '#';
+            lines[self.height as usize -1][x] = '#';
+        });
+        (0..self.height as usize).for_each(|y| {
+            lines[y][0] = '#';
+            lines[y][self.width as usize - 1] = '#';
+        });
+        lines[self.start.y as usize][self.start.x as usize] = '.';
+        lines[self.finish.y as usize][self.finish.x as usize] = '.';
+        self.blizzards.iter().for_each(|b| {
+            let symbol = match b.direction {
+                Direction::Up => '^',
+                Direction::Down => 'v',
+                Direction::Right => '>',
+                Direction::Left => '<',
+            };
+            lines[b.start.y as usize][b.start.x as usize] = symbol;
+        });
+
+        for line in lines {
+            writeln!(f, "{}", line.iter().collect::<String>())?;
+        };
+        Ok(())
+    }
+}
+
 
 #[derive(thiserror::Error, Debug)]
 pub enum AocError {
@@ -102,5 +134,13 @@ mod tests {
 
 
         assert_eq!(model, expected);
+    }
+
+    #[test]
+    fn test_display() {
+        let input = SIMPLE_INPUT;
+        let model = input.parse::<InputModel>().unwrap();
+        let actual = format!("{}", model);
+        assert_eq!(actual, input);
     }
 }
