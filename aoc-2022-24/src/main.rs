@@ -1,23 +1,32 @@
 #![feature(test)]
-use aoc_2022_24::{AocError, Valley};
+use aoc_2022_24::*;
 
 const INPUT: &str = include_str!("../data/input.txt");
 
 
-fn part1(_input: &Valley) -> Result<String,AocError> {
-    return Ok("Not implemented".to_string())
+fn part1(input: &mut Valley) -> Result<String,AocError> {
+   let walker = Walker::new(input);
+   let finish = input.finish;
+   let path = walker.best_path(input, &finish);
+   Ok(path.unwrap().time).map(|x| x.to_string())
 }
 
-fn part2(_input: &Valley) -> Result<String, AocError> {
-    return Ok("Not implemented".to_string())
+fn part2(input: &mut Valley) -> Result<String, AocError> {
+   let walker = Walker::new(input);
+   let start = input.start;
+   let finish = input.finish;
+   let walker = walker.best_path(input, &finish)
+       .and_then(|w| w.best_path(input, &start))
+       .and_then(|w| w.best_path(input, &finish));
+   Ok(walker.unwrap().time).map(|x| x.to_string())
 }
 
 fn main() -> Result<(), AocError> {
-    let input:Valley = INPUT.parse::<Valley>()?;
-    let part1_result = part1(&input)?;
+    let mut input:Valley = INPUT.parse::<Valley>()?;
+    let part1_result = part1(&mut input)?;
     println!("Part1: {}", part1_result);
     println!("--------------");
-    let part2_result = part2(&input)?;
+    let part2_result = part2(&mut input)?;
     println!("Part2: {}", part2_result);
     Ok(())
 }
@@ -50,16 +59,16 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        let actual = part1(&input_data()).unwrap();
-        let expected = "";
+        let actual = part1(&mut input_data()).unwrap();
+        let expected = "18";
 
         assert_eq!(actual, expected);
     }
 
     #[test]
     fn test_part2() {
-        let actual = part2(&input_data()).unwrap();
-        let expected = "";
+        let actual = part2(&mut input_data()).unwrap();
+        let expected = "54";
 
         assert_eq!(actual, expected);
     }
@@ -71,12 +80,12 @@ mod tests {
 
     #[bench]
     fn bench_part1(b: &mut Bencher) {
-        b.iter(|| part1(&input_data()))
+        b.iter(|| part1(&mut input_data()))
     }
 
     #[bench]
     fn bench_part2(b: &mut Bencher) {
-        b.iter(|| part2(&input_data()))
+        b.iter(|| part2(&mut input_data()))
     }
 
 }
