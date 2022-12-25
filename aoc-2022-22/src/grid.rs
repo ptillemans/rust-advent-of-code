@@ -19,6 +19,16 @@ pub enum Tile {
     Wall,
 }
 
+impl Display for Tile {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Tile::Void => write!(f, " "),
+            Tile::Empty => write!(f, "."),
+            Tile::Wall => write!(f, "#"),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Move {
     TurnLeft,
@@ -76,12 +86,15 @@ impl Direction {
 
     pub fn steps(&self, pos: Position,  steps: usize) -> Position {
         let steps = steps as i32;
-        match self {
+        let new_pos = match self {
             Direction::Up => pos + Position::new(0, -steps),
             Direction::Down => pos + Position::new(0, steps),
             Direction::Left => pos + Position::new(-steps, 0),
             Direction::Right => pos + Position::new(steps, 0),
-        }
+        };
+        println!("{:?} {} -> {:?}", pos, steps, new_pos);
+        new_pos
+
     }
 
     pub(crate) fn inverse(&self) -> Direction {

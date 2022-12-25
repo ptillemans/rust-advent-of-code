@@ -1,11 +1,15 @@
+use core::fmt;
 use itertools::Itertools;
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    fmt::{Display, Formatter},
+};
 
 use aoc_common::position::Position;
 use ndarray::{array, Array2};
 
 use crate::{
-    grid::{Direction, Grid, Tile, Move},
+    grid::{Direction, Grid, Move, Tile},
     AocError, InputModel,
 };
 
@@ -44,6 +48,18 @@ impl CubeSide {
     }
 }
 
+impl Display for CubeSide {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for row in self.grid.iter() {
+            for tile in row.iter() {
+                write!(f, "{}", tile)?;
+            }
+            writeln!(f)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Copy)]
 enum Rotation {
     Straight,
@@ -64,7 +80,6 @@ impl From<Rotation> for Array2<i32> {
 }
 
 impl Rotation {
-
     fn apply_dir(&self, dir: Direction) -> Direction {
         match self {
             Rotation::Straight => dir,
@@ -103,7 +118,6 @@ impl Rotation {
             Rotation::CounterClockwise => Rotation::Clockwise,
         }
     }
-
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -113,14 +127,8 @@ pub struct CubeLink {
 }
 
 impl CubeLink {
-    fn new(
-        to: usize,
-        rotation: Rotation,
-    ) -> Self {
-        Self {
-            to,
-            rotation,
-        }
+    fn new(to: usize, rotation: Rotation) -> Self {
+        Self { to, rotation }
     }
 }
 
@@ -130,9 +138,7 @@ pub fn find_cube_sides(grid: &Grid, size: usize) -> Vec<CubeSide> {
     let faces_h = grid.len() / size;
     (0..grid.len())
         .step_by(size)
-        .flat_map(|y| {
-            (0..grid[y].len()).step_by(size).map(move |x| (x, y))
-        })
+        .flat_map(|y| (0..grid[y].len()).step_by(size).map(move |x| (x, y)))
         .filter_map(|(x, y)| {
             let face_position = Position::new(x as i32 / size as i32, y as i32 / size as i32);
             let face_grid: Grid = (y..y + size)
@@ -146,11 +152,7 @@ pub fn find_cube_sides(grid: &Grid, size: usize) -> Vec<CubeSide> {
                 None
             } else {
                 let face_id = face_position.x * faces_h as i32 + face_position.y + 1;
-                Some(CubeSide::new(
-                    face_id as usize,
-                    face_grid,
-                    face_position,
-                ))
+                Some(CubeSide::new(face_id as usize, face_grid, face_position))
             }
         })
         .collect::<Vec<CubeSide>>()
@@ -162,19 +164,21 @@ pub fn find_straight_links(sides: &[CubeSide]) -> CubeLinks {
     let straight_links = sides
         .iter()
         .map(|side| {
-            let links = Direction::iter().filter_map(|dir| {
-                let face_pos = dir.step(side.face_position);
-                if let Some(other) = side_map.get(&face_pos) {
-                    let link = CubeLink::new(other.id, Rotation::Straight);
+            let links = Direction::iter()
+                .filter_map(|dir| {
+                    let face_pos = dir.step(side.face_position);
+                    if let Some(other) = side_map.get(&face_pos) {
+                        let link = CubeLink::new(other.id, Rotation::Straight);
 
-                    println!("link {} {:?} {link:?}", side.id, dir);
-                    Some((dir, link))
-                } else {
-                    None
-                }
-            }).collect::<HashMap<Direction, CubeLink>>();
+                        Some((dir, link))
+                    } else {
+                        None
+                    }
+                })
+                .collect::<HashMap<Direction, CubeLink>>();
             (side.id, links)
-        }).collect::<CubeLinks>();
+        })
+        .collect::<CubeLinks>();
 
     straight_links
 }
@@ -220,63 +224,55 @@ fn add_links(sides: &[CubeSide], links: &CubeLinks, cube_size: usize) -> CubeLin
         .iter()
         .flat_map(|side| {
             let start_links = links.get(&side.id).unwrap();
-            start_links.iter() 
+            start_links
+                .iter()
                 .permutations(2)
                 .filter(|edges| neighbor_directions(*edges[0].0, *edges[1].0))
                 .map(|links| {
                     let (dir1, link1) = links[0];
                     let (dir2, link2) = links[1];
-                    println!("link {} links: {:?}", side.id, links);
                     let rotation = find_rotation(*dir2, *dir1);
                     // reverse rotation on link 1 and add rotation of link2
                     let link_rot = link2.rotation.apply_rot(link1.rotation.inverse());
                     // apply on the corner rotation
                     let back_rotation = link_rot.apply_rot(rotation);
-                    println!("rotations: {:?} {:?} -> {:?}", link_rot, rotation, back_rotation);
                     let dir = link1.rotation.inverse().apply_dir(*dir2);
-                    println!("dir: {:?} + {:?} -> {:?}", link1.rotation.inverse(), dir2, dir);
-                    let link = (link1.to, dir, back_rotation, link2.to);
-                    println!("link {}  {link:?}", side.id);
-                    link
+                    
+                    (link1.to, dir, back_rotation, link2.to)
                 })
                 .collect::<Vec<(usize, Direction, Rotation, usize)>>()
         })
         .collect();
 
-    additional.iter().for_each(|(from, direction, rotation, to)| {
-        let link = CubeLink::new(*to, *rotation);
-        let side = links.entry(*from).or_insert_with(HashMap::new);
+    additional
+        .iter()
+        .for_each(|(from, direction, rotation, to)| {
+            let link = CubeLink::new(*to, *rotation);
+            let side = links.entry(*from).or_insert_with(HashMap::new);
 
-        side.entry(*direction).and_modify(|e| {
-            if *e != link {
-                println!("inconsisten links {e:?} <> {link:?}");
-                panic!("invalid link");
-            }
-        }).or_insert(link); 
-    });
+            side.entry(*direction)
+                .and_modify(|e| {
+                    if *e != link {
+                        println!("inconsisten links {e:?} <> {link:?}");
+                        panic!("invalid link");
+                    }
+                })
+                .or_insert(link);
+        });
 
     links
-
 }
 
 pub fn find_cube_links(sides: &[CubeSide], cube_size: usize) -> CubeLinks {
     let links = find_straight_links(sides);
 
     let links = add_links(sides, &links, cube_size);
-    println!("");
-    println!("round 1 done");
-    println!("");
     let links = add_links(sides, &links, cube_size);
-    println!("");
-    println!("round 2 done");
-    println!("");
     let links = add_links(sides, &links, cube_size);
-    println!("");
-    println!("round 3 done");
-    println!("");
     add_links(sides, &links, cube_size)
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct Cube {
     size: usize,
     sides: Vec<CubeSide>,
@@ -284,16 +280,48 @@ struct Cube {
 }
 
 impl Cube {
-
     pub fn new(grid: &Grid, size: usize) -> Self {
         let sides = find_cube_sides(grid, size);
         let links = find_cube_links(&sides, size);
         Cube { size, sides, links }
     }
-
 }
 
+impl fmt::Display for Cube {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let faces: HashMap<Position, Vec<String>> = self
+            .sides
+            .iter()
+            .map(|side| -> (Position, Vec<String>) {
+                (
+                    side.face_position,
+                    format!("{side}").lines().map(|s| s.to_string()).collect(),
+                )
+            })
+            .collect();
 
+        for y in 0..4 {
+            for row in 0..self.size {
+                let mut line = String::new();
+                for x in 0..=3 {
+                    let pos = Position::new(x, y);
+                    if let Some(side) = faces.get(&pos) {
+                        line.push_str(&side[row]);
+                    } else {
+                        line.push_str(&" ".repeat(self.size));
+                    }
+                }
+                if line.trim().is_empty() {
+                    continue;
+                }
+                writeln!(f, "{}", line.trim_end())?;
+            }
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct CubeWalker {
     cube: Cube,
     face: usize,
@@ -303,16 +331,30 @@ struct CubeWalker {
 
 impl CubeWalker {
     pub fn new(cube: Cube, face: usize, position: Position, direction: Direction) -> Self {
-        CubeWalker { cube, face, position, direction }
+        CubeWalker {
+            cube,
+            face,
+            position,
+            direction,
+        }
     }
 
     pub fn walk(&mut self) {
         let mut pos = self.direction.step(self.position);
         if self.out_of_bounds(pos) {
-            pos = self.direction.inverse().steps(self.position, self.cube.size);
-            let link = self.cube.links.get(&self.face).unwrap().get(&self.direction).unwrap();
+            pos = self
+                .direction
+                .inverse()
+                .steps(pos, self.cube.size);
+            let link = self
+                .cube
+                .links
+                .get(&self.face)
+                .unwrap()
+                .get(&self.direction)
+                .unwrap();
             self.face = link.to;
-            self.direction = link.rotation.apply_dir(self.direction);
+            self.direction = link.rotation.inverse().apply_dir(self.direction);
             self.position = self.rotate_position(pos, link.rotation);
         } else {
             self.position = pos;
@@ -320,12 +362,15 @@ impl CubeWalker {
     }
 
     fn get_tile(&self) -> Tile {
-        self.cube.sides.get(self.face).unwrap().get_tile(self.position)
+        self.cube
+            .sides
+            .get(self.face)
+            .unwrap()
+            .get_tile(self.position)
     }
 
     fn out_of_bounds(&self, pos: Position) -> bool {
-        pos.x < 0 || pos.x >= self.cube.size as i32 
-            || pos.y < 0 || pos.y >= self.cube.size as i32
+        pos.x < 0 || pos.x >= self.cube.size as i32 || pos.y < 0 || pos.y >= self.cube.size as i32
     }
 
     fn rotate_position(&self, pos: Position, rotation: Rotation) -> Position {
@@ -334,10 +379,67 @@ impl CubeWalker {
             Rotation::Straight => pos,
             Rotation::Clockwise => Position::new(pos.y, n - pos.x),
             Rotation::CounterClockwise => Position::new(n - pos.y, pos.x),
-            Rotation::Flip => Position::new(n - pos.y, n - pos.x),
+            Rotation::Flip => Position::new(n - pos.x, n - pos.y),
         }
     }
+
+    fn display_walk(&mut self, moves: &[Move]) {
+        println!("Moves: {moves:?}");
+        println!(
+            "Start: {} {:?} {:?}",
+            self.face, self.position, self.direction
+        );
+        for m in moves {
+            println!("move: {}", self.cube);
+            self.direction = self.direction.turn(*m);
+            if let Move::Forward(n) = m {
+                self.walk();
+                for _ in 1..*n {
+                    println!("{self}");
+                    self.walk();
+                }
+            }
+            println!("{self}");
+        }
+        println!("Walk done.");
+    }
 }
+
+impl Display for CubeWalker {
+    // place a marker for the walker position in the current face
+    // of the formatted cube
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let display = format!("{}", self.cube);
+        if let Some(current_face) = self.cube.sides.iter().find(|f| f.id == self.face) {
+            let (c, r) = current_face.face_position.into();
+
+            let walker_line = (r * self.cube.size as i32 + self.position.y) as usize;
+            for (i, line) in display.lines().enumerate() {
+                let mut line = line.to_string();
+                if i == walker_line {
+                    let p: usize = (c * self.cube.size as i32 + self.position.x) as usize;
+                    line.replace_range(
+                        p..p + 1,
+                        &format!(
+                            "{}",
+                            match self.direction {
+                                Direction::Up => '^',
+                                Direction::Down => 'v',
+                                Direction::Left => '<',
+                                Direction::Right => '>',
+                            }
+                        ),
+                    );
+                };
+                writeln!(f, "{line}")?;
+            }
+        } else {
+            writeln!(f, "No such face : {}", self.face)?;
+        }
+        Ok(())
+    }
+}
+
 pub fn cube_password(_input: &InputModel, _size: usize) -> Result<i32, AocError> {
     Ok(0)
 }
@@ -364,7 +466,7 @@ mod tests {
 
         let links = find_straight_links(&cubesides);
         assert_eq!(links.len(), 6);
-        assert_eq!(links.iter().flat_map(|(_,dir)| dir.keys()).count(), 10);
+        assert_eq!(links.iter().flat_map(|(_, dir)| dir.keys()).count(), 10);
     }
 
     #[test]
@@ -374,6 +476,48 @@ mod tests {
 
         let links = find_cube_links(&cubesides, 4);
         assert_eq!(links.len(), 6);
-        assert_eq!(links.iter().flat_map(|(_,dir)| dir.keys()).count(), 24);
+        assert_eq!(links.iter().flat_map(|(_, dir)| dir.keys()).count(), 24);
+    }
+
+    #[test]
+    fn test_cube_display() {
+        let input = TEST_INPUT.parse::<InputModel>().unwrap();
+        let cube = Cube::new(&input.grid, 4);
+        let cube_display = format!("{}", cube);
+
+        // trim last 2 lines of TEST_INPUT
+        let expected = TEST_INPUT
+            .lines()
+            .take(TEST_INPUT.lines().count() - 2)
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        println!("{}", expected);
+        println!("{}", cube_display);
+
+        assert_eq!(cube_display.trim_end(), expected);
+    }
+
+    #[test]
+    fn test_cube_walk_straight() {
+        let input = TEST_INPUT.parse::<InputModel>().unwrap();
+        for direction in Direction::iter() {
+            let cube = Cube::new(&input.grid, 4);
+            let face_id = cube.sides[0].id;
+            let mut walker = CubeWalker::new(cube, face_id, Position::new(1, 1), direction);
+            let start_walker = walker.clone();
+
+            let moves = vec![Move::Forward(16)];
+            println!("Ok boots, start walking :");
+            //walker.display_walk(&moves);
+            for _ in 0..16 {
+                println!("step...");
+                walker.walk();
+                println!("{}", walker);
+            }
+
+            println!("Ok boots, done walking.");
+            assert_eq!(walker, start_walker);
+        }
     }
 }
