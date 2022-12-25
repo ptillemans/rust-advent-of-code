@@ -46,6 +46,7 @@ impl CubeSide {
         }
         self.grid[position.y as usize][position.x as usize]
     }
+
 }
 
 impl Display for CubeSide {
@@ -359,9 +360,9 @@ impl CubeWalker {
             dir = link.rotation.inverse().apply_dir(self.direction);
             pos = self.rotate_position(pos, link.rotation);
         }
-        if no_walls || !self.current_face().is_wall(pos) {
+        if no_walls || self.current_face().get_tile(pos) == Tile::Empty {
             self.face = face;
-            self.pos = pos
+            self.position = pos;
             self.direction = dir;
         }
     }
