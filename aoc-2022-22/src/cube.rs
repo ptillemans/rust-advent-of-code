@@ -451,7 +451,17 @@ impl Display for CubeWalker {
 }
 
 pub fn cube_password(_input: &InputModel, _size: usize) -> Result<i32, AocError> {
-    Ok(0)
+    let cube = Cube::new(&input.grid, 4);
+    let face_id = cube.sides[0].id;
+    let mut walker = CubeWalker::new(cube, face_id, Position::new(0, 0), Direction::Right);
+    let (x, y) = walker.position.into();
+    let (r, c) = walker.current_face().face_position.into();
+   
+    let x = x + c * walker.cube.size as i32;
+    let y = y + r * walker.cube.size as i32;
+    walker.direction.try_into()
+        .map(|d: i32| y * 1000 + x * 4 + d)
+
 }
 
 #[cfg(test)]
@@ -529,5 +539,12 @@ mod tests {
             println!("Ok boots, done walking.");
             assert_eq!(walker, start_walker);
         }
+    }
+
+    #[test]
+    fn test_cube_password() {
+        let input = TEST_INPUT.parse::<InputModel>().unwrap();
+        let password = cube_password(&input, 4).unwrap();
+        assert_eq!(password, 1984);
     }
 }
