@@ -1,11 +1,12 @@
 #![feature(test)]
-use aoc_2022_25::{AocError, InputModel};
+use aoc_2022_25::*;
 
 const INPUT: &str = include_str!("../data/input.txt");
 
 
-fn part1(_input: &InputModel) -> Result<String,AocError> {
-    return Ok("Not implemented".to_string())
+fn part1(input: &InputModel) -> Result<String,AocError> {
+    let sum = sum_snafu(&input.lines);
+    Ok(decimal_snafu(sum))
 }
 
 fn part2(_input: &InputModel) -> Result<String, AocError> {
@@ -28,11 +29,23 @@ mod tests {
     use super::*;
     use test::Bencher;
 
-    const TEST_INPUT: &str = "";
+    const TEST_INPUT: &str = "1=-0-2
+12111
+2=0=
+21
+2=01
+111
+20012
+112
+1=-1=
+1-12
+12
+1=
+122";
+
 
     pub fn input_data() -> InputModel {
-        InputModel {
-        }
+        TEST_INPUT.parse::<InputModel>().unwrap()
     }
 
     #[test]
@@ -46,7 +59,7 @@ mod tests {
     #[test]
     fn test_part1() {
         let actual = part1(&input_data()).unwrap();
-        let expected = "";
+        let expected = "2=-1=0";
 
         assert_eq!(actual, expected);
     }
