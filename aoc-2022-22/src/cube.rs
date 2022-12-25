@@ -360,7 +360,8 @@ impl CubeWalker {
             dir = link.rotation.inverse().apply_dir(self.direction);
             pos = self.rotate_position(pos, link.rotation);
         }
-        if no_walls || self.current_face().get_tile(pos) == Tile::Empty {
+        let tile = self.cube.sides.iter().find(|f| f.id == face).unwrap().get_tile(pos);
+        if no_walls || tile == Tile::Empty {
             self.face = face;
             self.position = pos;
             self.direction = dir;
@@ -389,25 +390,22 @@ impl CubeWalker {
         }
     }
 
-    fn display_walk(&mut self, moves: &[Move], no_walls: bool) {
-        println!("Moves: {moves:?}");
-        println!(
-            "Start: {} {:?} {:?}",
-            self.face, self.position, self.direction
-        );
+    fn do_walk(&mut self, moves: &[Move], no_walls: bool, display: bool) {
         for m in moves {
-            println!("move: {}", self.cube);
             self.direction = self.direction.turn(*m);
             if let Move::Forward(n) = m {
                 self.walk(no_walls);
                 for _ in 1..*n {
+                    if display {
                     println!("{self}");
+                    }
                     self.walk(no_walls);
                 }
             }
-            println!("{self}");
+            if display {
+                println!("{self}");
+            }
         }
-        println!("Walk done.");
     }
 
     fn current_face(&self) -> CubeSide {
@@ -450,15 +448,17 @@ impl Display for CubeWalker {
     }
 }
 
-pub fn cube_password(_input: &InputModel, _size: usize) -> Result<i32, AocError> {
-    let cube = Cube::new(&input.grid, 4);
+pub fn cube_password(input: &InputModel, size: usize) -> Result<i32, AocError> {
+    let cube = Cube::new(&input.grid, size);
     let face_id = cube.sides[0].id;
     let mut walker = CubeWalker::new(cube, face_id, Position::new(0, 0), Direction::Right);
+    walker.do_walk(&input.moves, false, false);
     let (x, y) = walker.position.into();
-    let (r, c) = walker.current_face().face_position.into();
-   
-    let x = x + c * walker.cube.size as i32;
-    let y = y + r * walker.cube.size as i32;
+    let (c, r) = walker.current_face().face_position.into();
+
+    let x = x + c * walker.cube.size as i32 + 1;
+    let y = y + r * walker.cube.size as i32 + 1;
+    let d: i32 = walker.direction.try_into().unwrap();
     walker.direction.try_into()
         .map(|d: i32| y * 1000 + x * 4 + d)
 
@@ -512,9 +512,6 @@ mod tests {
             .collect::<Vec<_>>()
             .join("\n");
 
-        println!("{}", expected);
-        println!("{}", cube_display);
-
         assert_eq!(cube_display.trim_end(), expected);
     }
 
@@ -528,15 +525,11 @@ mod tests {
             let start_walker = walker.clone();
 
             let moves = vec![Move::Forward(16)];
-            println!("Ok boots, start walking :");
             //walker.display_walk(&moves);
             for _ in 0..16 {
-                println!("step...");
                 walker.walk(true);
-                println!("{}", walker);
             }
 
-            println!("Ok boots, done walking.");
             assert_eq!(walker, start_walker);
         }
     }
@@ -545,6 +538,6 @@ mod tests {
     fn test_cube_password() {
         let input = TEST_INPUT.parse::<InputModel>().unwrap();
         let password = cube_password(&input, 4).unwrap();
-        assert_eq!(password, 1984);
+        assert_eq!(password, 5031);
     }
 }
