@@ -339,8 +339,10 @@ impl CubeWalker {
         }
     }
 
-    pub fn walk(&mut self) {
+    pub fn walk(&mut self, no_walls: bool) {
         let mut pos = self.direction.step(self.position);
+        let mut face = self.face;
+        let mut dir =  self.direction;
         if self.out_of_bounds(pos) {
             pos = self
                 .direction
@@ -353,11 +355,14 @@ impl CubeWalker {
                 .unwrap()
                 .get(&self.direction)
                 .unwrap();
-            self.face = link.to;
-            self.direction = link.rotation.inverse().apply_dir(self.direction);
-            self.position = self.rotate_position(pos, link.rotation);
-        } else {
-            self.position = pos;
+            face = link.to;
+            dir = link.rotation.inverse().apply_dir(self.direction);
+            pos = self.rotate_position(pos, link.rotation);
+        }
+        if no_walls || !self.current_face().is_wall(pos) {
+            self.face = face;
+            self.pos = pos
+            self.direction = dir;
         }
     }
 
@@ -383,7 +388,7 @@ impl CubeWalker {
         }
     }
 
-    fn display_walk(&mut self, moves: &[Move]) {
+    fn display_walk(&mut self, moves: &[Move], no_walls: bool) {
         println!("Moves: {moves:?}");
         println!(
             "Start: {} {:?} {:?}",
@@ -393,15 +398,19 @@ impl CubeWalker {
             println!("move: {}", self.cube);
             self.direction = self.direction.turn(*m);
             if let Move::Forward(n) = m {
-                self.walk();
+                self.walk(no_walls);
                 for _ in 1..*n {
                     println!("{self}");
-                    self.walk();
+                    self.walk(no_walls);
                 }
             }
             println!("{self}");
         }
         println!("Walk done.");
+    }
+
+    fn current_face(&self) -> CubeSide {
+        self.cube.sides.iter().find(|f| f.id == self.face).unwrap().clone()
     }
 }
 
@@ -512,7 +521,7 @@ mod tests {
             //walker.display_walk(&moves);
             for _ in 0..16 {
                 println!("step...");
-                walker.walk();
+                walker.walk(true);
                 println!("{}", walker);
             }
 
