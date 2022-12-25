@@ -10,8 +10,8 @@ fn part1(input: &InputModel) -> Result<String,AocError> {
     Ok(final_password(input).unwrap().to_string())
 }
 
-fn part2(input: &InputModel) -> Result<String, AocError> {
-    Ok(cube_password(input, 50).unwrap().to_string())
+fn part2(input: &InputModel, size: usize) -> Result<String, AocError> {
+    Ok(cube_password(input, size).unwrap().to_string())
 }
 
 fn main() -> Result<(), AocError> {
@@ -19,7 +19,7 @@ fn main() -> Result<(), AocError> {
     let part1_result = part1(&input)?;
     println!("Part1: {part1_result}");
     println!("--------------");
-    let part2_result = part2(&input)?;
+    let part2_result = part2(&input, 50)?;
     println!("Part2: {part2_result}");
     Ok(())
 }
@@ -52,8 +52,8 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        let actual = part2(&input_data()).unwrap();
-        let expected = "";
+        let actual = part2(&input_data(), 4).unwrap();
+        let expected = "5031";
 
         assert_eq!(actual, expected);
     }
@@ -70,7 +70,7 @@ mod tests {
 
     #[bench]
     fn bench_part2(b: &mut Bencher) {
-        b.iter(|| part2(&input_data()))
+        b.iter(|| part2(&input_data(), 4))
     }
 
 }
