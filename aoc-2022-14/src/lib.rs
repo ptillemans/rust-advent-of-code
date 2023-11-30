@@ -1,4 +1,3 @@
-#![feature(result_option_inspect)]
 use std::{
     collections::HashMap,
     str::FromStr,
