@@ -39,7 +39,7 @@ impl FromStr for InputModel {
 
 // represent points on the grid
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-enum Cell {
+pub enum Cell {
     Empty,
     Hazard(i32, i32),
     RiskLevel(i32, (i32, i32)),
@@ -47,7 +47,7 @@ enum Cell {
 }
 
 // find the bounding box around the points
-fn bounding_box(points: &Vec<(i32, i32)>) -> ((i32, i32), (i32, i32)) {
+fn bounding_box(points: &[(i32, i32)]) -> ((i32, i32), (i32, i32)) {
     let mut min_x = points[0].0;
     let mut max_x = min_x;
     let mut min_y = points[0].1;
@@ -69,20 +69,24 @@ fn bounding_box(points: &Vec<(i32, i32)>) -> ((i32, i32), (i32, i32)) {
     ((min_x, min_y), (max_x,  max_y))
 }
 
-fn fill_grid(points: &Vec<(i32, i32)>) -> Vec<Vec<Cell>> {
+pub fn fill_grid(points: &[(i32, i32)]) -> Vec<Vec<Cell>> {
     let ((min_x, min_y), (max_x, max_y)) = bounding_box(points);
     let mut grid = vec![vec![Cell::Empty; (max_x - min_x + 3) as usize]; (max_y - min_y + 3) as usize];
     for (x, y) in points {
-        grid[*y as usize][*x as usize] = Cell::Hazard(*x, *y);
+        grid[(*y - min_y + 1) as usize][(*x - min_x + 1) as usize] = Cell::Hazard(*x, *y);
     }
-    for y in min_y..=max_y {
-        for x in min_x..=max_x {
+    for y in min_y-1..=max_y+1{
+        for x in min_x-1..=max_x+1{
             let mut min_distance = std::i32::MAX;
             let mut min_point = (0, 0);
             let mut min_count = 0;
             for (px, py) in points {
                 let distance = (x - px).abs() + (y - py).abs();
-                if distance < min_distance {
+               
+                if distance == 0 {
+                    min_count = 0;
+                    break;
+                } else if distance < min_distance {
                     min_distance = distance;
                     min_point = (*px, *py);
                     min_count = 1;
@@ -91,18 +95,39 @@ fn fill_grid(points: &Vec<(i32, i32)>) -> Vec<Vec<Cell>> {
                 }
             }
             if min_count == 1 {
-                grid[y as usize][x as usize] = Cell::RiskLevel(min_distance, min_point);
+                grid[(y - min_y + 1) as usize][(x - min_x + 1) as usize] = Cell::RiskLevel(min_distance, min_point);
             }
         }
     }
-    for y in min_y..=max_y {
-        for x in min_x..=max_x {
-            print!("{:?}", grid[y as usize][x as usize]);
-        }
-        println!();
-    };
     grid
 }
+
+pub fn count_safe_locations(points: &[(i32, i32)], max_len: i32) -> i32 {
+    let ((min_x, min_y), (max_x, max_y)) = bounding_box(points);
+    let delta = max_len / points.len() as i32;
+    let min_x = min_x - delta;
+    let min_y = min_y - delta;
+    let max_x = max_x + delta;
+    let max_y = max_y + delta;
+    let mut count = 0;
+    for y in min_y..=max_y{
+        for x in min_x..=max_x{
+            let mut tot_distance = 0;
+            for (px, py) in points {
+                let distance = (x - px).abs() + (y - py).abs();
+                tot_distance += distance;
+                if tot_distance >= max_len {
+                    break;
+                }
+            }
+            if tot_distance < max_len {
+                count += 1;
+            }
+        }
+    }
+    count
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -132,10 +157,11 @@ mod tests {
     #[test]
     fn test_fill_grid_trivial() {
         let grid = fill_grid(&vec![(1, 1)]);
+        println!("grid: {:?}", grid);
         for x in 0..3 {
             for y in 0..3 {
                 if x == 1 && y == 1 {
-                    assert_eq!(grid[x][y], Cell::Hazard(0, 0));
+                    assert_eq!(grid[x][y], Cell::Hazard(1, 1));
                 } else {
                     assert_eq!(grid[x][y], Cell::RiskLevel((x as i32 - 1).abs()+(y as i32 - 1).abs(), (1, 1)));
                 }

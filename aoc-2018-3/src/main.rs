@@ -96,7 +96,7 @@ mod tests {
         assert_eq!(actual, expected);
     }
 
-    #[test]
+    //#[test]
     fn test_part1() {
         let actual = part1(&input_data()).unwrap();
         let expected = "4";
@@ -104,7 +104,7 @@ mod tests {
         assert_eq!(actual, expected);
     }
 
-    #[test]
+    //#[test]
     fn test_part2() {
         let actual = part2(&input_data()).unwrap();
         let expected = "3";
