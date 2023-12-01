@@ -28,21 +28,9 @@ fn find_first_and_last(line: &str) -> Option<(u32, u32)> {
     ];
 
     let mut occurrences = spelled_numbers.iter()
-        .flat_map(|(spelled, digit)|
-                  if let Some(first) = line.find(spelled) {
-                      if let Some(last) = line.rfind(spelled) {
-                         if first != last {
-                             vec![(first, digit) , (last, digit)]
-                         } else {
-                             vec![(first,digit)]
-                         }
-                      } else {
-                         vec![(first, digit)] 
-                      }
-                  } else {
-                      vec![]
-                      })
-        .map(|(i, digit)| (i, *digit))
+        .flat_map(|(spelled, digit)| line
+                .match_indices(spelled)
+                .map(move |(i, _)| (i, *digit)))
         .collect::<Vec<(usize, u32)>>();
 
     occurrences.sort();
@@ -51,25 +39,23 @@ fn find_first_and_last(line: &str) -> Option<(u32, u32)> {
         .map(|(_, digit)| *digit)
         .collect::<Vec<u32>>();
 
-    digits.first().and_then(|first| digits.last().map(|last| (*first, *last)))
+    digits.first()
+        .and_then(|first| digits.last()
+                  .map(|last| (*first, *last)))
 }
 
-fn line_to_number(line: &str) -> u32 {
+fn line_to_number(line: &str) -> Option<u32> {
     let digits: Vec<u32> = line
         .chars()
-        .filter(|c| c.is_digit(10))
-        .map(|c| c.to_digit(10).unwrap())
+        .filter_map(|c| c.to_digit(10))
         .collect();
-    let first = digits.first().unwrap();
-    let last = digits.last().unwrap();
-    let n = 10*first + last;
-    
-    return n;
+    digits.first()
+        .and_then(|first| digits.last().map(|last| 10*first + last))
 }
 
 fn lines_to_number(lines: Vec<String>) -> Vec<u32> {
     lines.iter()
-        .map(|line| line_to_number(line))
+        .filter_map(|line| line_to_number(line))
         .collect()
 }
 fn part1(_input: &InputModel) -> Result<String,AocError> {
