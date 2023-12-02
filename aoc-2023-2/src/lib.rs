@@ -38,15 +38,13 @@ fn parse(s: &str) -> Result<InputModel, AocError> {
                     tag("blue")
                 ))
             )),
-        |(count, _, color)| {
-            let color =    match color {
-                            "red" => Showing::new(count, 0, 0),
-                            "green" => Showing::new(0, count, 0),
-                            "blue" => Showing::new(0, 0, count),
-                            _ => panic!("Unexpected color"),
-            };
-            Ok::<Showing, ()>(color)
-        } 
+        |(count, _, color)| 
+            match color {
+                "red" => Ok(Showing::new(count, 0, 0)),
+                "green" => Ok(Showing::new(0, count, 0)),
+                "blue" => Ok(Showing::new(0, 0, count)),
+                _ => Err(())
+            }
     );
 
     let parse_showing = map_res(
