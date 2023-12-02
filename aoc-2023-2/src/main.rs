@@ -187,16 +187,18 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
 
     #[bench]
     fn bench_parse(b: &mut Bencher) {
-        b.iter(|| TEST_INPUT.parse::<InputModel>().unwrap())
+        b.iter(|| INPUT.parse::<InputModel>().unwrap())
     }
 
     #[bench]
     fn bench_part1(b: &mut Bencher) {
-        b.iter(|| part1(&input_data()))
+        let data = INPUT.parse::<InputModel>().unwrap();
+        b.iter(|| part1(&data))
     }
 
     #[bench]
     fn bench_part2(b: &mut Bencher) {
-        b.iter(|| part2(&input_data()))
+        let data = INPUT.parse::<InputModel>().unwrap();
+        b.iter(|| part2(&data))
     }
 }
