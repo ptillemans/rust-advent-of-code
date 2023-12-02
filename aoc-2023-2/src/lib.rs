@@ -1,15 +1,11 @@
-use std::{str::FromStr, cmp::max};
 use nom::{
-    combinator::map_res,
-    branch::alt,
-    bytes::complete::tag,
-    character::complete as cc,
-    sequence,
-    multi::separated_list1,
+    branch::alt, bytes::complete::tag, character::complete as cc, combinator::map_res,
+    multi::separated_list1, sequence,
 };
+use std::{cmp::max, str::FromStr};
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct InputModel  {
+pub struct InputModel {
     pub games: Vec<Game>,
 }
 
@@ -18,7 +14,7 @@ pub enum AocError {
     #[error("Error parsing the input")]
     ParseError,
 }
-        
+
 impl FromStr for InputModel {
     type Err = AocError;
 
@@ -29,46 +25,39 @@ impl FromStr for InputModel {
 
 fn parse(s: &str) -> Result<InputModel, AocError> {
     let parse_color = map_res(
-            sequence::tuple((
-                cc::u32::<&str, ()>,
-                cc::multispace1,
-                alt((
-                    tag("red"),
-                    tag("green"),
-                    tag("blue")
-                ))
-            )),
-        |(count, _, color)| 
-            match color {
-                "red" => Ok(Showing::new(count, 0, 0)),
-                "green" => Ok(Showing::new(0, count, 0)),
-                "blue" => Ok(Showing::new(0, 0, count)),
-                _ => Err(())
-            }
+        sequence::tuple((
+            cc::u32::<&str, ()>,
+            cc::multispace1,
+            alt((tag("red"), tag("green"), tag("blue"))),
+        )),
+        |(count, _, color)| match color {
+            "red" => Ok(Showing::new(count, 0, 0)),
+            "green" => Ok(Showing::new(0, count, 0)),
+            "blue" => Ok(Showing::new(0, 0, count)),
+            _ => Err(()),
+        },
     );
 
-    let parse_showing = map_res(
-        separated_list1(tag(", "), parse_color),
-        |showings| {
-            let showing = showings.iter()
-                .fold(Showing::empty(), |acc, s| acc.merge(s));
-            Ok::<Showing, ()>(showing)
-        }
+    let parse_showing = map_res(separated_list1(tag(", "), parse_color), |showings| 
+        Ok::<_,()>(showings
+            .iter()
+            .fold(Showing::empty(), |acc, s| acc.merge(s)))
     );
 
     let mut parse_line = map_res(
-        sequence::tuple((tag("Game "),
-                            cc::u32,
-                            tag(": "),
-                        separated_list1(
-                            tag("; "),
-                            parse_showing)
+        sequence::tuple((
+            tag("Game "),
+            cc::u32,
+            tag(": "),
+            separated_list1(tag("; "), parse_showing),
         )),
-            |(_, game_number, _, showings)|
-                Ok::<Game, ()>(Game { game_number, showings })
+        |(_, game_number, _, showings)| {
+            Ok::<Game, ()>(Game {
+                game_number,
+                showings,
+            })
+        },
     );
-
-
 
     s.lines()
         .filter_map(|l| parse_line(l).ok())
@@ -76,7 +65,6 @@ fn parse(s: &str) -> Result<InputModel, AocError> {
         .collect::<Result<Vec<Game>, AocError>>()
         .map(|games| InputModel { games })
 }
-
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Game {
@@ -151,11 +139,9 @@ impl Showing {
             blue,
         }
     }
-    
+
     pub fn is_valid(&self, bag: &Bag) -> bool {
-        self.red <= bag.red
-            && self.green <= bag.green
-            && self.blue <= bag.blue
+        self.red <= bag.red && self.green <= bag.green && self.blue <= bag.blue
     }
 
     fn merge(&self, showing: &Showing) -> Showing {
@@ -185,13 +171,12 @@ impl Bag {
 
     pub fn union(&self, other: &Bag) -> Bag {
         Bag {
-            red: max(self.red,other.red),
+            red: max(self.red, other.red),
             green: max(self.green, other.green),
-            blue: max(self.blue,other.blue),
+            blue: max(self.blue, other.blue),
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -223,7 +208,8 @@ Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
                             red: 0,
                             green: 2,
                             blue: 0,
-                        },]
+                        },
+                    ],
                 },
                 Game {
                     game_number: 2,
@@ -242,14 +228,18 @@ Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
                             red: 0,
                             green: 1,
                             blue: 1,
-                        },]
-                    
-                }
+                        },
+                    ],
+                },
             ],
         };
-        model.games.iter().zip(expected.games.iter()).for_each(|(a, b)| {
-            assert_eq!(a, b);
-        });
+        model
+            .games
+            .iter()
+            .zip(expected.games.iter())
+            .for_each(|(a, b)| {
+                assert_eq!(a, b);
+            });
         assert_eq!(model, expected);
     }
 
@@ -272,7 +262,6 @@ Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
         };
         assert!(showing1.is_valid(&bag));
         assert!(!showing2.is_valid(&bag));
-
     }
 
     #[test]
@@ -299,7 +288,8 @@ Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
                     red: 0,
                     green: 2,
                     blue: 0,
-                },]
+                },
+            ],
         };
         let game2 = Game {
             game_number: 2,
@@ -318,8 +308,8 @@ Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
                     red: 20,
                     green: 1,
                     blue: 1,
-                },]
-            
+                },
+            ],
         };
         assert!(game1.is_valid(&bag));
         assert!(!game2.is_valid(&bag));
@@ -350,7 +340,8 @@ Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
                     red: 0,
                     green: 2,
                     blue: 0,
-                },]
+                },
+            ],
         };
         let minimal_bag = game.minimal_bag();
         let expected_bag = Bag::new(4, 2, 6);
