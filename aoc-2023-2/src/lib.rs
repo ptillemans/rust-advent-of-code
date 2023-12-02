@@ -1,4 +1,12 @@
 use std::{str::FromStr, cmp::max};
+use nom::{
+    combinator::map_res,
+    branch::alt,
+    bytes::complete::tag,
+    character::complete as cc,
+    sequence,
+    multi::separated_list1,
+};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct InputModel  {
@@ -20,45 +28,57 @@ impl FromStr for InputModel {
 }
 
 fn parse(s: &str) -> Result<InputModel, AocError> {
+    let parse_color = map_res(
+            sequence::tuple((
+                cc::u32::<&str, ()>,
+                cc::multispace1,
+                alt((
+                    tag("red"),
+                    tag("green"),
+                    tag("blue")
+                ))
+            )),
+        |(count, _, color)| {
+            let color =    match color {
+                            "red" => Showing::new(count, 0, 0),
+                            "green" => Showing::new(0, count, 0),
+                            "blue" => Showing::new(0, 0, count),
+                            _ => panic!("Unexpected color"),
+            };
+            Ok::<Showing, ()>(color)
+        } 
+    );
+
+    let parse_showing = map_res(
+        separated_list1(tag(", "), parse_color),
+        |showings| {
+            let showing = showings.iter()
+                .fold(Showing::empty(), |acc, s| acc.merge(s));
+            Ok::<Showing, ()>(showing)
+        }
+    );
+
+    let mut parse_line = map_res(
+        sequence::tuple((tag("Game "),
+                            cc::u32,
+                            tag(": "),
+                        separated_list1(
+                            tag("; "),
+                            parse_showing)
+        )),
+            |(_, game_number, _, showings)|
+                Ok::<Game, ()>(Game { game_number, showings })
+    );
+
+
+
     s.lines()
-        .map(|l| parse_line(l))
+        .filter_map(|l| parse_line(l).ok())
+        .map(|(_, game)| Ok(game))
         .collect::<Result<Vec<Game>, AocError>>()
         .map(|games| InputModel { games })
 }
 
-fn parse_line(s: &str) -> Result<Game, AocError> {
-    let mut parts = s.split(":");
-    let game_number: u32= parts.next()
-        .ok_or(AocError::ParseError)
-        .and_then(|s| s.trim().strip_prefix("Game ").ok_or(AocError::ParseError))
-        .map(|s| s.trim_end_matches(":"))
-        .and_then(|s| s.parse::<u32>().map_err(|_| AocError::ParseError))?;
-
-    parts.next().ok_or(AocError::ParseError)
-        .and_then(|s| s.split(";")
-                .map(|s| parse_showing(s))
-                .collect::<Result<Vec<Showing>, AocError>>())
-        .map(|showings| Game { game_number, showings })
-}
-
-fn parse_showing(s: &str) -> Result<Showing, AocError> {
-    let parts = s.split(",");
-    let mut red = 0;
-    let mut green = 0;
-    let mut blue = 0;
-    for part in parts {
-        let mut part = part.trim().split(" ");
-        let count = part.next().unwrap().parse::<u32>().unwrap();
-        let color = part.next().unwrap();
-        match color {
-            "red" => red = count,
-            "green" => green = count,
-            "blue" => blue = count,
-            _ => return Err(AocError::ParseError),
-        }
-    }
-    Ok(Showing { red, green, blue })
-}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Game {
@@ -98,10 +118,54 @@ pub struct Showing {
 }
 
 impl Showing {
+    pub fn new(red: u32, green: u32, blue: u32) -> Showing {
+        Showing { red, green, blue }
+    }
+
+    pub fn empty() -> Showing {
+        Showing {
+            red: 0,
+            green: 0,
+            blue: 0,
+        }
+    }
+
+    pub fn with_red(&self, red: u32) -> Showing {
+        Showing {
+            red,
+            green: self.green,
+            blue: self.blue,
+        }
+    }
+
+    pub fn with_green(&self, green: u32) -> Showing {
+        Showing {
+            red: self.red,
+            green,
+            blue: self.blue,
+        }
+    }
+
+    pub fn with_blue(&self, blue: u32) -> Showing {
+        Showing {
+            red: self.red,
+            green: self.green,
+            blue,
+        }
+    }
+    
     pub fn is_valid(&self, bag: &Bag) -> bool {
         self.red <= bag.red
             && self.green <= bag.green
             && self.blue <= bag.blue
+    }
+
+    fn merge(&self, showing: &Showing) -> Showing {
+        Showing {
+            red: self.red + showing.red,
+            green: self.green + showing.green,
+            blue: self.blue + showing.blue,
+        }
     }
 }
 
@@ -135,18 +199,6 @@ impl Bag {
 mod tests {
 
     use super::*;
-
-    #[test]
-    fn test_parse_showing() {
-        let input = "3 blue, 4 red";
-        let showing = parse_showing(input).unwrap();
-        let expected = Showing {
-            red: 4,
-            green: 0,
-            blue: 3,
-        };
-        assert_eq!(showing, expected);
-    }
 
     #[test]
     fn test_parse() {
