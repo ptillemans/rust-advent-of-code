@@ -219,7 +219,7 @@ fn neighbor_directions(dir1: Direction, dir2: Direction) -> bool {
     )
 }
 
-fn add_links(sides: &[CubeSide], links: &CubeLinks, cube_size: usize) -> CubeLinks {
+fn add_links(sides: &[CubeSide], links: &CubeLinks, _cube_size: usize) -> CubeLinks {
     let mut links = links.clone();
     let additional: Vec<(usize, Direction, Rotation, usize)> = sides
         .iter()
@@ -458,7 +458,7 @@ pub fn cube_password(input: &InputModel, size: usize) -> Result<i32, AocError> {
 
     let x = x + c * walker.cube.size as i32 + 1;
     let y = y + r * walker.cube.size as i32 + 1;
-    let d: i32 = walker.direction.try_into().unwrap();
+    let _d: i32 = walker.direction.try_into().unwrap();
     walker.direction.try_into()
         .map(|d: i32| y * 1000 + x * 4 + d)
 
@@ -524,7 +524,7 @@ mod tests {
             let mut walker = CubeWalker::new(cube, face_id, Position::new(1, 1), direction);
             let start_walker = walker.clone();
 
-            let moves = vec![Move::Forward(16)];
+            let _moves = vec![Move::Forward(16)];
             //walker.display_walk(&moves);
             for _ in 0..16 {
                 walker.walk(true);
