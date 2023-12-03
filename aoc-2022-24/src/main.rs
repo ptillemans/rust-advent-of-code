@@ -3,26 +3,26 @@ use aoc_2022_24::*;
 
 const INPUT: &str = include_str!("../data/input.txt");
 
-
-fn part1(input: &mut Valley) -> Result<String,AocError> {
-   let walker = Walker::new(input);
-   let finish = input.finish;
-   let path = walker.best_path(input, &finish);
-   Ok(path.unwrap().time).map(|x| x.to_string())
+fn part1(input: &mut Valley) -> Result<String, AocError> {
+    let walker = Walker::new(input);
+    let finish = input.finish;
+    let path = walker.best_path(input, &finish);
+    Ok(path.unwrap().time).map(|x| x.to_string())
 }
 
 fn part2(input: &mut Valley) -> Result<String, AocError> {
-   let walker = Walker::new(input);
-   let start = input.start;
-   let finish = input.finish;
-   let walker = walker.best_path(input, &finish)
-       .and_then(|w| w.best_path(input, &start))
-       .and_then(|w| w.best_path(input, &finish));
-   Ok(walker.unwrap().time).map(|x| x.to_string())
+    let walker = Walker::new(input);
+    let start = input.start;
+    let finish = input.finish;
+    let walker = walker
+        .best_path(input, &finish)
+        .and_then(|w| w.best_path(input, &start))
+        .and_then(|w| w.best_path(input, &finish));
+    Ok(walker.unwrap().time).map(|x| x.to_string())
 }
 
 fn main() -> Result<(), AocError> {
-    let mut input:Valley = INPUT.parse::<Valley>()?;
+    let mut input: Valley = INPUT.parse::<Valley>()?;
     let part1_result = part1(&mut input)?;
     println!("Part1: {}", part1_result);
     println!("--------------");
@@ -72,7 +72,7 @@ mod tests {
 
         assert_eq!(actual, expected);
     }
-    
+
     #[bench]
     fn bench_parse(b: &mut Bencher) {
         b.iter(|| TEST_INPUT.parse::<Valley>().unwrap())
@@ -87,5 +87,4 @@ mod tests {
     fn bench_part2(b: &mut Bencher) {
         b.iter(|| part2(&mut input_data()))
     }
-
 }
