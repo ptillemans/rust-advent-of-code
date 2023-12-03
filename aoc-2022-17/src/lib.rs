@@ -1,4 +1,3 @@
-#![feature(result_option_inspect)]
 use std::str::FromStr;
 use std::collections::HashMap;
 use aoc_common::position::Position;
