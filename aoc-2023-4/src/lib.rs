@@ -1,6 +1,6 @@
 use nom::{
     bytes::complete::tag, character::complete as cc, combinator::map_res, multi::{separated_list1, many1},
-    sequence::tuple
+    sequence::{tuple, terminated}
 };
 use std::str::FromStr;
 
@@ -19,17 +19,32 @@ impl FromStr for InputModel {
     type Err = AocError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parse_card = map_res(
+        let parse_card_id = map_res(
             tuple((
-                tuple((tag("Card"), cc::multispace1)),
+                tag("Card"),
+                cc::multispace1,
                 cc::u32::<_,()>,
-                tuple((tag(":"), cc::multispace1)),
+                tag(":"),
+                cc::multispace1)),
+            |(_, _, id, _, _)| Ok::<_,()>(id),
+        );
+        let parse_winning_numbers = 
+            terminated(
                 separated_list1(cc::multispace1, cc::u32),
                 tuple((cc::multispace1, tag("|"), cc::multispace1)),
+            );
+        let parse_numbers = 
+            terminated(
                 separated_list1(cc::multispace1, cc::u32),
                 cc::multispace0,
+            );
+        let parse_card = map_res(
+            tuple((
+                parse_card_id,
+                parse_winning_numbers,
+                parse_numbers
             )),
-            |(_, id, _, winning, _, numbers, _)| {
+            |(id,winning, numbers)| {
                 Ok::<_,()>(ScratchCard {
                     id,
                     winning,
