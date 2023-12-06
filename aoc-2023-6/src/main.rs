@@ -1,8 +1,6 @@
 #![feature(test)]
 #![feature(portable_simd)]
 
-use std::simd::StdFloat;
-
 use aoc_2023_6::{AocError, InputModel};
 
 const INPUT: &str = include_str!("../data/input.txt");
@@ -27,10 +25,10 @@ fn solve_equation(t: i64, d: i64) -> (i64, i64) {
     let mut x1: i64 = x1.ceil() as i64;
     let mut x2: i64 = x2.floor() as i64;
 
-    while (x1 * (t - x1) <= d) {
+    while x1 * (t - x1) <= d {
         x1 += 1;
     }
-    while (x2 * (t - x2) <= d) {
+    while x2 * (t - x2) <= d {
         x2 -= 1
     }
     println!("{} {} {} {}", t, d, x1, x2);

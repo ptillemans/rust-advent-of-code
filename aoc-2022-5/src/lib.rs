@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use nom::{IResult, Parser, bytes::complete::tag, sequence::tuple, combinator::map_res, character::complete::{digit1, newline, line_ending, anychar}, branch::alt, multi::{separated_list1, many_till}};
+use nom::{IResult, Parser, bytes::complete::tag, sequence::tuple, combinator::map_res, character::complete::{digit1, line_ending, anychar}, branch::alt, multi::{separated_list1, many_till}};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct InputModel  {
@@ -33,7 +33,7 @@ impl FromStr for InputModel {
 impl InputModel {
     fn parse(s: &str) -> IResult<&str, InputModel> {
         let (s, stacks) = Stacks::parse(s)?;
-        let (s, _) = newline(s)?;
+        let (s, _) = line_ending(s)?;
         let (s, moves) = Moves::parse(s)?;
 
         Ok((s, InputModel { stacks, moves }))
@@ -112,7 +112,7 @@ impl Stacks {
 
     fn parse(input: &str) -> IResult<&str, Stacks>{
         tuple((
-            separated_list1(newline, Stacks::parse_stack_line),
+            separated_list1(line_ending, Stacks::parse_stack_line),
             line_ending,
             many_till(anychar, line_ending)
         ))
@@ -219,7 +219,7 @@ impl Moves {
     fn parse(s: &str) -> IResult<&str, Moves> {
         let mut parser = map_res(
             separated_list1(
-                newline,
+                line_ending,
                 Move::parse
             ),
             |moves| Ok::<Moves, AocError>(Moves(moves))

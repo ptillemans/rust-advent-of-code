@@ -9,6 +9,6 @@ edition = "2021"
 aoc-common = { version = "0.1.0", path = "../aoc-common" }
 itertools = "0.10.5"
 ndarray = "0.15.6"
-ndarray-linalg = { version = "0.16.0", features = ["openblas-static"]  }
+ndarray-linalg = { version = "0.16.0", features = ["openblas-system"]  }
 nom = "7.1.1"
 thiserror="*"

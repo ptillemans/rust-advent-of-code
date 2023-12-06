@@ -182,7 +182,7 @@ impl FromStr for InputModel {
     type Err = AocError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        separated_list1(newline, command).parse(s)
+        separated_list1(line_ending, command).parse(s)
             .map(|(_, commands)| InputModel { commands })
             .map_err(|_| AocError::ParseError)
     }
@@ -211,7 +211,7 @@ fn directory_parser(input: &str) -> IResult<&str, FileSystemNode> {
 }
 
 fn ls_output(output: &str) -> IResult<&str, Vec<FileSystemNode>> {
-    separated_list0(newline, alt(( file_parser, directory_parser,)))
+    separated_list0(line_ending, alt(( file_parser, directory_parser,)))
         .parse(output)
 }
 
@@ -219,7 +219,7 @@ fn command(input: &str) -> IResult<&str, Command> {
    preceded(
         tag("$ "),
         alt((
-            preceded(terminated(tag("ls"),newline), ls_output).map(Command::LS),
+            preceded(terminated(tag("ls"),line_ending), ls_output).map(Command::LS),
             tag("cd ..").map(|_| Command::CDUP),
             tag("cd /").map(|_| Command::CDROOT),
             preceded(tag("cd "), file_name_parser).map(Command::CD),
