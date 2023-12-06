@@ -65,17 +65,19 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
         .chunks(2)
         .map(|chunk| (chunk[0], chunk[0] + chunk[1]))
         .collect();
-    println!("available seeds: {:?}", available_seeds);
     let deltas = collapse_mapranges(input, "seed", "location");
-    println!("deltas: {:?}", deltas);
+
+    let sus = deltas
+        .iter()
+        .filter(|(start, delta)| start + delta == 0)
+        .collect::<Vec<_>>();
+
 
     let triplets: Vec<(i64, i64, i64)> = deltas
         .iter()
         .zip(deltas.iter().skip(1))
         .map(|((start1, delta1), (start2, delta2))| (*start1, *start2, *delta1))
         .collect();
-
-    println!("triplets: {:?}", triplets);
 
     let mut relevant_triplets: Vec<(i64, i64, i64)> = vec![];
     for (seed_start, seed_end) in available_seeds {
@@ -88,24 +90,11 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
             relevant_triplets.push((min, max, min + *delta));
         }
     }
-    println!("relevant triplets: {:?}", relevant_triplets);
-
-    let zero_location = relevant_triplets.iter()
-        .find(|(_, _, location)| *location == 0);
-    println!("zero location: {:?}", zero_location);
-
-    if let Some((location, _, _)) = zero_location {
-        let eval = transform_chain(&input.mappings, "seed", "location", *location as u64);
-        let eval2 = apply_deltas(&deltas, *location);
-        println!("eval: {:?} {}", eval, eval2);
-    }
 
     let min_locations = relevant_triplets
         .iter()
         .map(|(_, _,  min_loc)| min_loc) 
         .collect::<Vec<_>>();
-
-    println!("min locations: {:?}", min_locations);
 
     let min_location = min_locations.iter().min().unwrap();
     
@@ -120,6 +109,10 @@ fn mapranges_to_deltas(mapranges: &[MapRange]) -> Vec<(i64, i64)> {
     let mut deltas: Vec<(i64, i64)> = mapranges.iter().fold(vec![], |mut acc, maprange| {
         let delta = maprange.to as i64 - maprange.from as i64;
 
+        if next_event > 0 && next_event < maprange.from as i64 {
+            acc.push((next_event, 0));
+            last_delta = 0;
+        }
         if last_delta != delta {
             acc.push((maprange.from as i64, delta));
         }
@@ -171,6 +164,12 @@ fn merge_deltas(deltas_1: &[(i64, i64)], deltas_2: &[(i64, i64)]) -> Vec<(i64, i
             } else {
                 None
             }
+        })
+        .map(|(start, delta)| {
+            if start == delta {
+                println !("***** start == delta: {} {}", start, delta);
+            };
+            (start, delta)
         })
         .collect();
     events.insert(0, first);
@@ -537,6 +536,22 @@ humidity-to-location map:
         let expected = vec![(15, -15), (69, 0)];
         let actual = mapranges_to_deltas(&mapranges);
         assert_eq!(actual, expected);
+
+        let mapranges = vec![
+            MapRange {
+                from: 15,
+                to: 0,
+                length: 37,
+            },
+            MapRange {
+                from: 54,
+                to: 39,
+                length: 15,
+            },
+        ];
+        let expected = vec![(15, -15), (52, 0), (54, -15), (69, 0)];
+        let actual = mapranges_to_deltas(&mapranges);
+        assert_eq!(actual, expected);
     }
 
     #[test]
@@ -583,6 +598,47 @@ humidity-to-location map:
         }
     }
 
+    #[test]
+    fn test_inconsistent_deltas() {
+        let input = INPUT.parse::<InputModel>().unwrap();
+        let source = "seed";
+        let target = "fertilizer";
+        let seed: u64 = 2720501486;
+
+        let mapping1 = &input.mappings.get(source).unwrap().1;
+        let deltas1 = mapranges_to_deltas(mapping1);
+        let actual = apply_deltas(&deltas1, seed as i64);
+        let expected = transform(&input.mappings, "seed", seed).unwrap().1 as i64;
+        assert_eq!(actual, expected);
+
+        let soil = actual as u64;
+        let mut mapping2 = input.mappings.get("soil").unwrap().1.clone();
+        mapping2.sort_by(|a, b| a.from.cmp(&b.from));
+        let deltas2 = mapranges_to_deltas(&mapping2);
+        println!("mappings2: {:?}", mapping2);
+        println!("deltas2: {:?}", deltas2);
+        let actual = apply_deltas(&deltas2, soil as i64);
+        let expected = transform(&input.mappings, "soil", soil).unwrap().1 as i64;
+        println!("{}: {} <-> {}", soil, actual, expected);
+        for (from, _) in deltas2.clone() {
+            let from = from - 100000;
+            let a = apply_deltas(&deltas2, from as i64);
+            let b = transform(&input.mappings, "soil", from as u64).unwrap().1 as i64;
+            println!("boundaries {}: {} {} -> {}", from, a, b, a == b);
+        }
+        assert_eq!(actual, expected);
+
+
+        let deltas = collapse_mapranges(&input, source, target);
+        let actual = apply_deltas(&deltas, seed as i64);
+        let expected = transform_chain(&input.mappings, source, target, seed)
+            .last()
+            .unwrap()
+            .1 as i64;
+
+        assert_eq!(actual, expected);
+    }
+    
     #[test]
     fn test_part2() {
         let actual = part2(&input_data()).unwrap();
