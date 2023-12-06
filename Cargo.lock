@@ -305,6 +305,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "aoc-2023-5"
+version = "0.1.0"
+dependencies = [
+ "nom",
+ "phf",
+ "thiserror",
+]
+
+[[package]]
+name = "aoc-2023-6"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+]
+
+[[package]]
 name = "aoc-common"
 version = "0.1.0"
 
