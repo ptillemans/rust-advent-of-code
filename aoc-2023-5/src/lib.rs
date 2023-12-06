@@ -1,6 +1,6 @@
 use nom::{
     bytes::complete::tag,
-    character::complete::{self as cc, alpha1, newline},
+    character::complete::{self as cc, alpha1, line_ending},
     combinator::map_res,
     multi::{many0, separated_list1},
     sequence::{delimited, terminated, tuple},
@@ -34,6 +34,7 @@ impl MapRange {
         }
     }
 }
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct Map {
     pub source: String,
@@ -54,8 +55,8 @@ impl FromStr for InputModel {
         map_res(
             tuple((
                 parse_seeds,
-                newline,
-                separated_list1(newline, parse_map_entry),
+                line_ending,
+                separated_list1(line_ending, parse_map_entry),
             )),
             |(seeds, _, mappings)| {
                 Ok::<_, ()>(InputModel {
@@ -88,7 +89,7 @@ fn parse_seeds(s: &str) -> IResult<&str, Vec<u64>> {
     delimited(
         tuple((tag("seeds:"), cc::multispace1)),
         separated_list1(cc::multispace1, cc::u64),
-        newline,
+        line_ending,
     )(s)
 }
 
@@ -98,9 +99,10 @@ fn parse_mapping(s: &str) -> IResult<&str, (String, String)> {
             alpha1::<&str, _>,
             tag("-to-"),
             alpha1::<&str, _>,
-            tag(" map:\n"),
+            tag(" map:"),
+            line_ending
         )),
-        |(source, _, destination, _)| Ok::<_, ()>((source.to_string(), destination.to_string())),
+        |(source, _, destination, _, _)| Ok::<_, ()>((source.to_string(), destination.to_string())),
     )(s)
 }
 
@@ -110,7 +112,7 @@ fn parse_triplets(s: &str) -> IResult<&str, Vec<MapRange>> {
             tuple((cc::u64, cc::multispace1, cc::u64, cc::multispace1, cc::u64)),
             |(to, _, from, _, length)| Ok::<_, ()>(MapRange { from, to, length }),
         ),
-        newline,
+        line_ending,
     ))(s)
 }
 

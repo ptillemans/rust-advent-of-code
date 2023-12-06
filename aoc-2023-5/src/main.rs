@@ -66,17 +66,10 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
         .map(|chunk| (chunk[0], chunk[0] + chunk[1]))
         .collect();
     let deltas = collapse_mapranges(input, "seed", "location");
-
-    let sus = deltas
-        .iter()
-        .filter(|(start, delta)| start + delta == 0)
-        .collect::<Vec<_>>();
-
-
     let triplets: Vec<(i64, i64, i64)> = deltas
         .iter()
         .zip(deltas.iter().skip(1))
-        .map(|((start1, delta1), (start2, delta2))| (*start1, *start2, *delta1))
+        .map(|((start1, delta1), (start2, _))| (*start1, *start2, *delta1))
         .collect();
 
     let mut relevant_triplets: Vec<(i64, i64, i64)> = vec![];
@@ -158,7 +151,7 @@ fn merge_deltas(deltas_1: &[(i64, i64)], deltas_2: &[(i64, i64)]) -> Vec<(i64, i
     let mut events: Vec<(i64, i64)> = acc
         .into_iter()
         .zip(shifted.into_iter())
-        .filter_map(|((start1, delta1), (start2, delta2))| {
+        .filter_map(|((_, delta1), (start2, delta2))| {
             if delta1 != delta2 {
                 Some((start2, delta2))
             } else {
@@ -197,16 +190,6 @@ fn main() -> Result<(), AocError> {
     let part2_result = part2(&input)?;
     println!("Part2: {}", part2_result);
     Ok(())
-}
-
-fn apply_deltas(deltas: &[(i64, i64)], value: i64) -> i64 {
-    let delta = deltas
-        .iter()
-        .take_while(|(from, _)| value >= *from)
-        .last()
-        .unwrap_or(&(0, 0))
-        .1;
-    value + delta
 }
 
 #[cfg(test)]
@@ -564,6 +547,16 @@ humidity-to-location map:
         assert_eq!(actual, expected);
     }
 
+    fn apply_deltas(deltas: &[(i64, i64)], value: i64) -> i64 {
+        let delta = deltas
+            .iter()
+            .take_while(|(from, _)| value >= *from)
+            .last()
+            .unwrap_or(&(0, 0))
+            .1;
+        value + delta
+    }
+
     #[test]
     fn test_collapse_mapranges() {
         let mappings = &input_data().mappings;
@@ -588,7 +581,7 @@ humidity-to-location map:
     fn test_all_mapranges_to_deltas() {
         let mappings = &input_data().mappings;
 
-        for (source, (destination, mapping)) in &input_data().mappings {
+        for (source, (_, mapping)) in &input_data().mappings {
             let deltas = mapranges_to_deltas(mapping);
             for value in 0..=1000 {
                 let actual = apply_deltas(&deltas, value);
