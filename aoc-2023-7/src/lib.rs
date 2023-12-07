@@ -23,7 +23,7 @@ impl FromStr for InputModel {
     }
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Clone, Copy)]
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Clone, Copy, Hash)]
 /// the possible values of the cards
 pub enum Card {
     Joker,
@@ -108,17 +108,17 @@ pub struct Hand {
 /// as all info is in the ranks vector
 impl Ord for Hand {
     fn cmp(&self, other: &Hand) -> Ordering {
-        self.ranks.cmp(&other.ranks)
+        let mut ord = self.ranks.cmp(&other.ranks);
+        if ord == Ordering::Equal {
+            ord = self.dealt.cmp(&other.dealt);
+        }
+        ord
     }
 }
 
 impl PartialOrd for Hand {
     fn partial_cmp(&self, other: &Hand) -> Option<Ordering> {
-        let mut ord = self.ranks.cmp(&other.ranks);
-        if ord == Ordering::Equal {
-            ord = self.dealt.cmp(&other.dealt);
-        }
-        Some(ord)
+        Some(self.cmp(other))
     }
 }
 
@@ -160,48 +160,37 @@ fn map_combinations<'a>(ranks: &Vec<Rank>) -> Vec<Rank> {
 
 fn to_cards(s: &str) -> Vec<Card> {
     s.chars()
-        .map(|c| Card::from_char(c))
+        .map(Card::from_char)
         .collect::<Option<Vec<Card>>>()
         .unwrap()
-}
-
-fn to_cards_with_joker(s: &str) -> Vec<Card> {
-    s.chars()
-        .filter_map(|c| match Card::from_char(c) {
-            Some(Card::Jack) => Some(Card::Joker),
-            Some(card) => Some(card),
-            None => None,
-        })
-        .collect::<Vec<Card>>()
 }
 
 impl FromStr for Hand {
     type Err = AocError;
 
     fn from_str(hand: &str) -> Result<Hand, AocError> {
-        let parts = hand.split(" ").collect::<Vec<&str>>();
+        let parts = hand.split(' ').collect::<Vec<&str>>();
         let dealt = to_cards(parts[0]);
         let bid = parts[1].parse::<u64>().expect("Invalid bid");
 
-        let mut ranks: Vec<Rank> = calc_ranks(&dealt);
+        let ranks: Vec<Rank> = calc_ranks(&dealt);
 
         Ok(Hand { dealt, ranks, bid })
     }
 }
 
-fn calc_ranks(cards: &Vec<Card>) -> Vec<Rank> {
+fn calc_ranks(cards: &[Card]) -> Vec<Rank> {
     let ranks: Vec<Rank> = cards
         .iter()
         .sorted()
         .cloned()
-        .group_by(|card| card.clone())
+        .group_by(|card| *card)
         .into_iter()
         .map(|(_, group)| map_card_groups(group))
         .sorted()
         .rev()
         .collect();
-    let ranks = map_combinations(&ranks);
-    ranks
+    map_combinations(&ranks)
 }
 
 impl Hand {
@@ -210,7 +199,7 @@ impl Hand {
             .iter()
             .sorted()
             .cloned()
-            .group_by(|card| card.clone())
+            .group_by(|card| *card)
             .into_iter()
             .map(|(_, group)| map_card_groups(group))
             .collect();
@@ -228,7 +217,7 @@ pub fn compare_card_with_jokers(a: &Card, b: &Card) -> Ordering {
         (Card::Jack, Card::Jack) => Ordering::Equal,
         (Card::Jack, _) => Ordering::Less,
         (_, Card::Jack) => Ordering::Greater,
-        (a, b) => a.cmp(&b),
+        (a, b) => a.cmp(b),
     }
 }
 
@@ -259,9 +248,16 @@ pub struct Hand2 {
 
     
 fn strongest_hand(hand: &[Card]) -> Vec<Card> {
+    let candidates = hand.iter().cloned()
+        .filter(|card| *card != Card::Joker)
+        .unique()
+        .collect::<Vec<Card>>();
+    if candidates.len() == 0 {
+        return vec![Card::Ace, Card::Ace, Card::Ace, Card::Ace, Card::Ace];
+    }
     let strongest = (0..hand.len())
         .fold(hand.to_vec(), |cards, i| match cards[i] {
-        Card::Joker => JOKER_CARDS
+        Card::Joker => candidates
             .iter()
             .map(|card| {
                 let mut new_cards = cards.clone();
@@ -297,14 +293,12 @@ impl From<Hand> for Hand2 {
             .collect::<Vec<Card>>();
         let strongest = strongest_hand(&cards);
         let ranks = calc_ranks(&strongest);
-        let hand2 = Hand2 {
+        Hand2 {
             cards,
             strongest,
             ranks,
             bid: hand.bid,
-        };
-        hand2
-
+        }
     }
 }
 
@@ -318,6 +312,12 @@ impl FromStr for Hand2 {
 
 impl PartialOrd for Hand2 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Hand2 {
+    fn cmp(&self, other: &Self) -> Ordering {
         let mut ord = self.ranks.cmp(&other.ranks);
         if ord == Ordering::Equal {
             ord = self
@@ -333,13 +333,7 @@ impl PartialOrd for Hand2 {
                     }
                 });
         };
-        Some(ord)
-    }
-}
-
-impl Ord for Hand2 {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
+        ord
     }
 }
 
@@ -443,6 +437,16 @@ QQQJA 483";
         let a = "KTJJT 123".parse::<Hand2>().unwrap();
         let b = "KK677 123".parse::<Hand2>().unwrap();
         assert_eq!(a.cmp(&b), Ordering::Greater);
+    }
+
+    fn to_cards_with_joker(s: &str) -> Vec<Card> {
+        s.chars()
+            .filter_map(|c| match Card::from_char(c) {
+                Some(Card::Jack) => Some(Card::Joker),
+                Some(card) => Some(card),
+                None => None,
+            })
+            .collect::<Vec<Card>>()
     }
 
     #[test]
