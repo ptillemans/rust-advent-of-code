@@ -1,25 +1,29 @@
 #![feature(test)]
-use aoc_2023_7::{AocError, InputModel, Hand};
+use aoc_2023_7::{AocError, Hand, Hand2, InputModel};
 
 const INPUT: &str = include_str!("../data/input.txt");
 
 fn part1(input: &InputModel) -> Result<String, AocError> {
     let mut hands = input.hands.clone();
     hands.sort();
-    for hand in hands.clone() {
-        println!("{:?}", hand)
-    };
-    let sum = hands.iter()
+    let sum = hands
+        .iter()
         .enumerate()
-        .map(|(i, hand)| {
-            hand.bid * (i as u64 + 1)
-        })
+        .map(|(i, hand)| hand.bid * (i as u64 + 1))
         .sum::<u64>();
     Ok(sum.to_string())
 }
 
-fn part2(_input: &InputModel) -> Result<String, AocError> {
-    return Ok("Not implemented".to_string());
+fn part2(input: &InputModel) -> Result<String, AocError> {
+    let hands = input.hands.clone();
+    let mut hands = hands.into_iter().map(Hand2::from).collect::<Vec<Hand2>>();
+    hands.sort();
+    let sum = hands
+        .iter()
+        .enumerate()
+        .map(|(i, hand)| hand.bid * (i as u64 + 1))
+        .sum::<u64>();
+    Ok(sum.to_string())
 }
 
 fn main() -> Result<(), AocError> {
@@ -38,17 +42,18 @@ mod tests {
     use super::*;
     use test::Bencher;
 
-    const TEST_INPUT: &str ="32T3K 765
+    const TEST_INPUT: &str = "32T3K 765
 T55J5 684
 KK677 28
 KTJJT 220
 QQQJA 483";
 
-    fn input_data() -> InputModel{
-        let hands :Vec<Hand> = TEST_INPUT.lines()
-            .filter_map(|line| Hand::from_str(line))
+    fn input_data() -> InputModel {
+        let hands: Vec<Hand> = TEST_INPUT
+            .lines()
+            .filter_map(|line| line.parse::<Hand>().ok())
             .collect();
-        InputModel{hands}
+        InputModel { hands }
     }
 
     #[test]
@@ -70,7 +75,7 @@ QQQJA 483";
     #[test]
     fn test_part2() {
         let actual = part2(&input_data()).unwrap();
-        let expected = "";
+        let expected = "5905";
 
         assert_eq!(actual, expected);
     }
