@@ -249,7 +249,7 @@ fn add_links(sides: &[CubeSide], links: &CubeLinks, _cube_size: usize) -> CubeLi
         .iter()
         .for_each(|(from, direction, rotation, to)| {
             let link = CubeLink::new(*to, *rotation);
-            let side = links.entry(*from).or_insert_with(HashMap::new);
+            let side = links.entry(*from).or_default();
 
             side.entry(*direction)
                 .and_modify(|e| {
@@ -366,14 +366,6 @@ impl CubeWalker {
             self.position = pos;
             self.direction = dir;
         }
-    }
-
-    fn get_tile(&self) -> Tile {
-        self.cube
-            .sides
-            .get(self.face)
-            .unwrap()
-            .get_tile(self.position)
     }
 
     fn out_of_bounds(&self, pos: Position) -> bool {
