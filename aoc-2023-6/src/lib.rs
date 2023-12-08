@@ -18,12 +18,12 @@ impl FromStr for InputModel {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parsed_lines: Vec<(String, Vec<u64>, u64)> =
-            s.lines().map(|line| parse_line(line)).collect();
+            s.lines().map(parse_line).collect();
         let times = parsed_lines[0].1.clone();
         let distances = parsed_lines[1].1.clone();
         let races = times
             .into_iter()
-            .zip(distances.into_iter())
+            .zip(distances)
             .collect();
         let part2_time = parsed_lines[0].2;
         let part2_distance = parsed_lines[1].2;
@@ -32,7 +32,7 @@ impl FromStr for InputModel {
 }
 
 fn parse_line(line: &str) -> (String, Vec<u64>, u64) {
-    let mut parts = line.split(":");
+    let mut parts = line.split(':');
     let name = parts.next().unwrap().trim().to_string();
     let vals = parts
         .next()
@@ -40,7 +40,7 @@ fn parse_line(line: &str) -> (String, Vec<u64>, u64) {
     let values = vals.split_whitespace()
         .map(|v| v.parse::<u64>().unwrap())
         .collect();
-    let squashed = vals.replace(" ", "").parse::<u64>().unwrap();
+    let squashed = vals.replace(' ', "").parse::<u64>().unwrap();
 
     (name, values, squashed)
 }

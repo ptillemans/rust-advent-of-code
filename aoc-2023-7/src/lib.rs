@@ -129,7 +129,7 @@ impl PartialEq for Hand {
 }
 
 /// Map groups of consecutive cards with the same value
-fn map_card_groups<'a>(group: impl Iterator<Item = Card>) -> Rank {
+fn map_card_groups(group: impl Iterator<Item = Card>) -> Rank {
     let cards: Vec<Card> = group.collect();
     match cards.len() {
         1 => Rank::HighCard,
@@ -146,7 +146,7 @@ fn map_card_groups<'a>(group: impl Iterator<Item = Card>) -> Rank {
 /// The ranks must already been grouped in pairs, three of a kinds, four of a
 /// kinds and sorted in descending value. That ensures canonical combinations
 /// which vastly simplifies matching for other combinations.
-fn map_combinations<'a>(ranks: &Vec<Rank>) -> Vec<Rank> {
+fn map_combinations(ranks: &Vec<Rank>) -> Vec<Rank> {
     match ranks.as_slice() {
         // two pairs
         [Rank::Pair, Rank::Pair, c] => {
@@ -220,22 +220,6 @@ pub fn compare_card_with_jokers(a: &Card, b: &Card) -> Ordering {
         (a, b) => a.cmp(b),
     }
 }
-
-const JOKER_CARDS: [Card; 12] = [
-    Card::Two,
-    Card::Three,
-    Card::Four,
-    Card::Five,
-    Card::Six,
-    Card::Seven,
-    Card::Eight,
-    Card::Nine,
-    Card::Ten,
-    Card::Queen,
-    Card::King,
-    Card::Ace,
-];
-
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Hand2 {

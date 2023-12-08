@@ -78,7 +78,6 @@ impl Instruction {
                 pc: registers.pc + 1,
                 x: registers.x + x,
                 cycle: registers.cycle + 2,
-                ..*registers
             }
         }
     }
@@ -146,7 +145,7 @@ fn pixel_on(cycle: usize, x: i32) -> bool {
 }
 
 pub fn crt_output(code: &Vec<Instruction>) -> Result<String, AocError> {    
-    let mut computer = Computer::new(&code);
+    let mut computer = Computer::new(code);
     let mut crt = vec!['.';240];
     computer.log_execution()
         .reduce(|last_r, r| {

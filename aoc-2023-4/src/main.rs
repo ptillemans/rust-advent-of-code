@@ -7,10 +7,10 @@ fn part1(input: &InputModel) -> Result<String, AocError> {
         .map(count_winning_numbers)
         .map(|n| match n {
             0 => 0,
-            n => (2 as u32).pow(n as u32 -1)
+            n => (2_u32).pow(n as u32 -1)
         })
         .sum::<u32>();
-    return Ok(sum.to_string());
+    Ok(sum.to_string())
 }
 
 fn count_winning_numbers(card: &ScratchCard) -> usize {
@@ -24,7 +24,7 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
         .map(|_| 1)
         .collect::<Vec<u32>>();
     let winnings = input.cards.iter()
-        .map(|card| count_winning_numbers(card))
+        .map(count_winning_numbers)
         .collect::<Vec<usize>>();
 
     for i in 0..input.cards.len() {

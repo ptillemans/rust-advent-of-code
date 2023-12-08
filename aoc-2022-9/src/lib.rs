@@ -105,12 +105,10 @@ impl Position {
 }
 
 fn sign(x: isize) -> isize {
-    if x > 0 {
-        1
-    } else if x < 0 {
-        -1
-    } else {
-        0
+    match x.cmp(&0) {
+        std::cmp::Ordering::Greater => 1,
+        std::cmp::Ordering::Less => -1,
+        std::cmp::Ordering::Equal => 0,
     }
 }
 

@@ -16,8 +16,8 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
     let trees = &input.trees;
     let (w, l) = bounds(trees);
 
-    let best_scenic_score = (0..w).into_iter()
-        .flat_map(|x| (0..l).into_iter().map(move |y| (x, y)))
+    let best_scenic_score = (0..w)
+        .flat_map(|x| (0..l).map(move |y| (x, y)))
         .map(|(x, y)| scenic_score(trees, (x, y)))
         .max()
         .map(|x| x.to_string());

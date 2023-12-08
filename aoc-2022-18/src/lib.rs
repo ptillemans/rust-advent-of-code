@@ -116,8 +116,7 @@ pub fn soak(cube: &mut Cube) {
         ])
         .collect();
     let seen: HashSet<Pos> = HashSet::from_iter(open.iter().cloned());
-    while !open.is_empty() {
-        let pos = open.pop().unwrap();
+    while let Some(pos) = open.pop() {
         for neighbour in NEIGHBOURS {
             let new_pos = pos + *neighbour;
             if cube.get(&new_pos) == Material::Air {

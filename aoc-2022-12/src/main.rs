@@ -8,26 +8,26 @@ fn part1(input: &InputModel) -> Result<String,AocError> {
     let start = find_start(input);
     let end = find_end(input);
     let steps = shortest_path_bfs(input, &start, &end)?;
-    return Ok(steps.to_string())
+    Ok(steps.to_string())
 }
 
 fn part2(input: &InputModel) -> Result<String, AocError> {
     let end = find_end(input);
     let steps = scenic_route(input, &end)?;
-    return Ok(steps.to_string())
+    Ok(steps.to_string())
 }
 
 fn part1_astar(input: &InputModel) -> Result<String,AocError> {
     let start = find_start(input);
     let end = find_end(input);
     let steps = shortest_path(input, &start, &end).map(|path| path.len())?;
-    return Ok(steps.to_string())
+    Ok(steps.to_string())
 }
 
 fn part2_astar(input: &InputModel) -> Result<String, AocError> {
     let end = find_end(input);
     let steps = scenic_route_astar(input, &end)?;
-    return Ok(steps.to_string())
+    Ok(steps.to_string())
 }
 
 fn main() -> Result<(), AocError> {

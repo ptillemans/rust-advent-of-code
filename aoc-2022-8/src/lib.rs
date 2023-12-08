@@ -103,6 +103,7 @@ pub fn scenic_score(trees: &Vec<Vec<char>>, pos: (usize, usize)) -> usize {
             break;
         }
     }
+    #[allow(clippy::needless_range_loop)]
     for i in x+1..l {
         east_count += 1;
         if height <= trees[i][y] {
@@ -115,8 +116,7 @@ pub fn scenic_score(trees: &Vec<Vec<char>>, pos: (usize, usize)) -> usize {
             break;
         }
     }
-    let score = north_count * south_count * east_count * west_count;
-    score
+    north_count * south_count * east_count * west_count
 }
 
 

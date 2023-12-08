@@ -17,7 +17,7 @@ impl FromStr for InputModel {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let assignments = s
             .lines()
-            .map(|line| parse_line(line))
+            .map(parse_line)
             .collect();
         Ok(InputModel { assignments })
     }
@@ -31,7 +31,7 @@ fn parse_pair(s: &str) -> (u32, u32) {
 }
 
 fn parse_line(line: &str) -> ((u32, u32), (u32, u32)) {
-    let mut parts = line.split(",");
+    let mut parts = line.split(',');
     let first = parts.next().unwrap();
     let second = parts.next().unwrap();
     (parse_pair(first), parse_pair(second))

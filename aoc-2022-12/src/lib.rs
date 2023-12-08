@@ -73,18 +73,17 @@ pub fn next_moves(grid: &Grid, current: &Position) -> Vec<Position> {
 
 // use the A* algorithm to find the shortest path between two points
 pub fn shortest_path(grid: &Grid, start: &Position, end: &Position) -> Result<Vec<Position>, AocError> {
-    let mut open_set = vec![start.clone()];
+    let mut open_set = vec![*start];
     let mut came_from = std::collections::HashMap::new();
     let mut g_score = std::collections::HashMap::new();
     let mut f_score = std::collections::HashMap::new();
-    g_score.insert(start.clone(), 0);
-    f_score.insert(start.clone(), start.manhattan(end));
+    g_score.insert(*start, 0);
+    f_score.insert(*start, start.manhattan(end));
 
     while !open_set.is_empty() {
-        let current = open_set.iter()
+        let current = *open_set.iter()
             .min_by_key(|pos| f_score.get(pos).unwrap())
-            .unwrap()
-            .clone();
+            .unwrap();
         if current == *end {
             return Ok(reconstruct_path(&came_from, current));
         }
@@ -92,9 +91,9 @@ pub fn shortest_path(grid: &Grid, start: &Position, end: &Position) -> Result<Ve
         for neighbor in next_moves(grid, &current) {
             let tentative_g_score = g_score.get(&current).unwrap() + 1;
             if g_score.get(&neighbor).is_none() || tentative_g_score < *g_score.get(&neighbor).unwrap() {
-                came_from.insert(neighbor.clone(), current.clone());
-                g_score.insert(neighbor.clone(), tentative_g_score);
-                f_score.insert(neighbor.clone(), tentative_g_score + neighbor.manhattan(end));
+                came_from.insert(neighbor, current);
+                g_score.insert(neighbor, tentative_g_score);
+                f_score.insert(neighbor, tentative_g_score + neighbor.manhattan(end));
                 if !open_set.contains(&neighbor) {
                     open_set.push(neighbor);
                 }
@@ -108,7 +107,7 @@ fn reconstruct_path(came_from: &std::collections::HashMap<Position, Position>, c
     let mut total_path = vec![current];
     let mut current = current;
     while came_from.contains_key(&current) {
-        current = came_from.get(&current).unwrap().clone();
+        current = *came_from.get(&current).unwrap();
         total_path.push(current);
     }
     total_path.reverse();
@@ -118,7 +117,7 @@ fn reconstruct_path(came_from: &std::collections::HashMap<Position, Position>, c
 
 pub fn shortest_path_bfs(grid: &Grid, start: &Position, end: &Position) -> Result<i32, AocError> {
     let mut open = std::collections::VecDeque::new();
-    open.push_front((0, start.clone()));
+    open.push_front((0, *start));
     let mut seen: HashSet<Position> = HashSet::new();
     loop {
         let (steps, current) = open.pop_front().ok_or(AocError::NoSolution)?;

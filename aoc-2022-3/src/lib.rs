@@ -74,7 +74,7 @@ impl FromStr for InputModel {
 }
 
 
-pub const TEST_INPUT: &'static str = "vJrwpWtwJgWrhcsFMMfFFhFp
+pub const TEST_INPUT: &str = "vJrwpWtwJgWrhcsFMMfFFhFp
 jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
 PmmdzqPrVvPwwTWBwg
 wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn

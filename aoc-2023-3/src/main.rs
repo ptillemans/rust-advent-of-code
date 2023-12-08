@@ -5,10 +5,10 @@ const INPUT: &str = include_str!("../data/input.txt");
 
 fn part1(input: &InputModel) -> Result<String, AocError> {
     let symbols = input.tokens.iter()
-        .filter(|t| if let TokenValue::Symbol(_) = t.value { true } else { false })
+        .filter(|t| matches!(t.value, TokenValue::Symbol(_)))
         .collect::<Vec<_>>();
     let numbers = input.tokens.iter()
-        .filter(|t| if let TokenValue::Number(_) = t.value { true } else { false })
+        .filter(|t| matches!(t.value,TokenValue::Number(_)))
         .collect::<Vec<_>>();
 
     let part_numbers = numbers.iter()
@@ -19,7 +19,7 @@ fn part1(input: &InputModel) -> Result<String, AocError> {
         .map(|n| if let TokenValue::Number(n) = n.value { n } else { panic!("Not a number") })
         .sum::<u32>();
 
-    return Ok(sum.to_string());
+    Ok(sum.to_string())
     
 }
 
@@ -28,17 +28,17 @@ fn symbols_touching(a: &Token, b: &Token) -> bool {
     let (b_line, b_col, _b_len) = b.location;
     let (min_line, max_line, min_col, max_col) = (a_line - 1, a_line+1, a_col - 1, a_col + a_len);
 
-    return b_line >= min_line && b_line <= max_line && b_col >= min_col && b_col <= max_col;
+    b_line >= min_line && b_line <= max_line && b_col >= min_col && b_col <= max_col
 }
 
 
 
 fn part2(input: &InputModel) -> Result<String, AocError> {
     let symbols = input.tokens.iter()
-        .filter(|t| if let TokenValue::Symbol(_) = t.value { true } else { false })
+        .filter(|t| matches!(t.value, TokenValue::Symbol(_)))
         .collect::<Vec<_>>(); 
     let numbers = input.tokens.iter()
-        .filter(|t| if let TokenValue::Number(_) = t.value { true } else { false })
+        .filter(|t| matches!(t.value,TokenValue::Number(_)))
         .collect::<Vec<_>>();
 
     let gears: u32 = symbols.iter()
@@ -55,7 +55,7 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
         .map(|numbers| numbers[0]*numbers[1])
         .sum();
 
-    return Ok(gears.to_string());
+    Ok(gears.to_string())
 }
 
 fn main() -> Result<(), AocError> {

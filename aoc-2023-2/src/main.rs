@@ -12,7 +12,7 @@ fn part1(input: &InputModel) -> Result<String, AocError> {
         .map(|g| g.game_number)
         .sum();
 
-    return Ok(sum.to_string());
+    Ok(sum.to_string())
 }
 
 fn part2(input: &InputModel) -> Result<String, AocError> {
@@ -22,7 +22,7 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
         .map(|g| g.minimal_bag().power())
         .sum::<u32>()
         .to_string();
-    return Ok(result);
+    Ok(result)
 }
 
 fn main() -> Result<(), AocError> {
