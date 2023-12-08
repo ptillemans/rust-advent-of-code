@@ -65,8 +65,7 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
     let base_polymer = input.polymer.to_owned();
     let minimal_length = ('a'..='z')
         .map(|c| base_polymer
-             .replace(c, "")
-             .replace(c.to_uppercase().next().unwrap(), ""))
+             .replace([c, c.to_uppercase().next().unwrap()], ""))
         .map(|polymer| perform_reaction(&polymer).len())
         .min();
         
