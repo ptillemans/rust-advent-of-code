@@ -20,7 +20,6 @@ impl FromStr for InputModel {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         s.lines()
-            .into_iter()
             .map(|s| s.parse::<i32>().map_err(|_| AocError::ParseError))
             .collect::<Result<Vec<i32>, AocError>>()
             .map(|values| InputModel{ values })
