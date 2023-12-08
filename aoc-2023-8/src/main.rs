@@ -1,7 +1,6 @@
 #![feature(test)]
 use aoc_2023_8::{AocError, InputModel, Direction};
-use itertools::{iterate, Itertools};
-use num::integer::{lcm, gcd};
+use num::integer::lcm;
 
 const INPUT: &str = include_str!("../data/input.txt");
 
@@ -21,24 +20,22 @@ fn part1(input: &InputModel) -> Result<String, AocError> {
             Some(state.clone())
         })
         .count();
-    return Ok(steps.to_string());
+    Ok(steps.to_string())
     
 }
 
 fn part2(input: &InputModel) -> Result<String, AocError> {
     let start_nodes = input.nodes.keys()
-        .filter(|key| key.ends_with("A"))
+        .filter(|key| key.ends_with('A'))
         .cloned()
         .collect::<Vec<String>>();
     let directions = &input.directions;
     let result = start_nodes.iter()
         .map(|start_node| {
-        let mut position: usize = 0;
-        let mut cycle_len: usize = 0;
         let steps = directions.iter()
             .cycle()
-            .scan((start_node.clone()), |node, direction| {
-                if node.ends_with("Z") {
+            .scan(start_node.clone(), |node, direction| {
+                if node.ends_with('Z') {
                     return None;
                 }
              
@@ -53,7 +50,7 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
             .count();
         steps
         })
-        .fold(1 as usize, |acc, cl| lcm(acc, cl));
+        .fold(1_usize, lcm);
 
     Ok(result.to_string())
 }
