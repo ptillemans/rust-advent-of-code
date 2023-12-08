@@ -10,7 +10,7 @@ fn part1(input: &InputModel) -> Result<String,AocError> {
 }
 
 fn part2(_input: &InputModel) -> Result<String, AocError> {
-    return Ok("".to_string())
+    Ok("".to_string())
 }
 
 fn main() -> Result<(), AocError> {

@@ -56,7 +56,7 @@ fn transform_chain(
         }
     }
 
-    return acc;
+    acc
 }
 
 fn part2(input: &InputModel) -> Result<String, AocError> {
@@ -123,8 +123,7 @@ fn merge_deltas(deltas_1: &[(i64, i64)], deltas_2: &[(i64, i64)]) -> Vec<(i64, i
     let mut last: i64 = 0;
     let mut offset = 0;
 
-    for i in 0..deltas_1.len() {
-        let (start1, delta1) = deltas_1[i];
+    for (start1, delta1) in deltas_1 {
         let (_, delta2) = deltas_2
             .iter()
             .take_while(|(start2, _)| *start2 < start1 + delta1)
@@ -138,9 +137,9 @@ fn merge_deltas(deltas_1: &[(i64, i64)], deltas_2: &[(i64, i64)]) -> Vec<(i64, i
         for (start2, delta2) in next2 {
             acc.push((start2 - offset, delta2 + offset));
         }
-        acc.push((start1, delta1 + delta2));
-        last = start1;
-        offset = delta1;
+        acc.push((*start1, delta1 + delta2));
+        last = *start1;
+        offset = *delta1;
     }
     for (start2, delta2) in deltas_2.iter().skip_while(|(start2, _)| *start2 < last) {
         acc.push((*start2, *delta2));
@@ -150,7 +149,7 @@ fn merge_deltas(deltas_1: &[(i64, i64)], deltas_2: &[(i64, i64)]) -> Vec<(i64, i
     let shifted = acc[1..].to_vec();
     let mut events: Vec<(i64, i64)> = acc
         .into_iter()
-        .zip(shifted.into_iter())
+        .zip(shifted)
         .filter_map(|((_, delta1), (start2, delta2))| {
             if delta1 != delta2 {
                 Some((start2, delta2))

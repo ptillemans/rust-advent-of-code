@@ -31,7 +31,7 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
         .min()
         .ok_or(AocError::NoSolution)?;
 
-   return Ok(solution.to_string())
+   Ok(solution.to_string())
 }
 
 fn main() -> Result<(), AocError> {

@@ -18,18 +18,18 @@ pub enum Packet {
 impl PartialOrd for Packet {
 
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        match (self, other) {
-            (Packet::Int(a), Packet::Int(b)) => a.partial_cmp(b),
-            (Packet::List(a), Packet::List(b)) => a.partial_cmp(b),
-            (Packet::Int(a), Packet::List(b)) => vec![Packet::Int(*a)].partial_cmp(b),
-            (Packet::List(a), Packet::Int(b)) => a.partial_cmp(&vec![Packet::Int(*b)]),
-        }
+        Some(self.cmp(other))
     }
 }
 
 impl Ord for Packet {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.partial_cmp(other).unwrap()
+        match (self, other) {
+            (Packet::Int(a), Packet::Int(b)) => a.cmp(b),
+            (Packet::List(a), Packet::List(b)) => a.cmp(b),
+            (Packet::Int(a), Packet::List(b)) => vec![Packet::Int(*a)].cmp(b),
+            (Packet::List(a), Packet::Int(b)) => a.cmp(&vec![Packet::Int(*b)]),
+        }
     }
 }
 

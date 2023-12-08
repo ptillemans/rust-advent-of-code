@@ -191,7 +191,7 @@ impl MonkeyTroop {
         }
     }
 
-    pub(crate) fn inspection_round(&mut self) -> () {
+    pub(crate) fn inspection_round(&mut self) {
         let ids = self.monkeys.iter().map(|monkey| monkey.id.clone()).collect::<Vec<_>>();
         
         for id in ids {
@@ -208,14 +208,14 @@ impl MonkeyTroop {
             self.inspection_round();
         }
         
-        let mut inspections = self.monkeys.iter().map(|monkey| monkey.inspections as i64)
+        let mut inspections = self.monkeys.iter().map(|monkey| monkey.inspections)
             .collect::<Vec<_>>();
 
         inspections.sort();
         inspections.iter()
             .rev()
             .take(2)
-            .map(|x| *x )
+            .copied()
             .product()
     }
 }

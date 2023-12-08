@@ -92,14 +92,14 @@ impl FileSystemNode {
     }
 
     fn find_path(&self, path: &[String]) -> Result<&FileSystemNode,AocError> {
-        if path.len() == 0 {
+        if path.is_empty() {
             return Err(AocError::NoSuchDirectory("???".to_string()));
         }
         let (first, rest) = path.split_first().unwrap();
         if first != &self.name {
             return Err(AocError::IllegalState)
         };
-        if rest.len() == 0 {
+        if rest.is_empty() {
             return Ok(self);
         }
         let (next, _) = rest.split_first().unwrap();
@@ -115,14 +115,14 @@ impl FileSystemNode {
     }
 
     fn find_path_mut(&mut self, path: &[String]) -> Result<&mut FileSystemNode,AocError> {
-        if path.len() == 0 {
+        if path.is_empty() {
             return Err(AocError::NoSuchDirectory("???".to_string()));
         }
         let (first, rest) = path.split_first().unwrap();
         if first != &self.name {
             return Err(AocError::IllegalState)
         };
-        if rest.len() == 0 {
+        if rest.is_empty() {
             return Ok(self);
         }
         let (next, _) = rest.split_first().unwrap();
@@ -244,11 +244,11 @@ impl Shell {
         &self.root
     }
 
-    pub fn get_path(&self, path: &Vec<String>) -> Result<&FileSystemNode, AocError> {
+    pub fn get_path(&self, path: &[String]) -> Result<&FileSystemNode, AocError> {
         self.root.find_path(path)
     }
 
-    pub fn get_path_mut(&mut self, path: &Vec<String>) -> Result<&mut FileSystemNode, AocError> {
+    pub fn get_path_mut(&mut self, path: &[String]) -> Result<&mut FileSystemNode, AocError> {
         self.root.find_path_mut(path)
     }
 
@@ -279,7 +279,7 @@ impl Shell {
                 NodeType::File(_) => Err(AocError::IllegalState),
             })?;
 
-        let new_dir = cur_dir_contents.into_iter()
+        let new_dir = cur_dir_contents.iter()
                  .filter(|node| node.is_dir())
                  .find(|node| node.name == name)
                  .ok_or(AocError::NoSuchDirectory(name.to_string()))?;
@@ -306,6 +306,11 @@ impl Shell {
     }
 }
 
+impl Default for Shell {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[cfg(test)]
 mod tests {

@@ -221,8 +221,7 @@ impl BluePrint {
 
         for _ in 0..period {
             let mut new_open = Vec::with_capacity(10000);
-            while !open.is_empty() {
-                let factory = open.pop().unwrap();
+            while let Some(factory) = open.pop() {
                 // check if we can produce a robot
                 let can_make: Vec<Resource> = self.recipes.iter()
                     .filter(|(_, inventory)| factory.resources.has_all_resources(inventory))
@@ -242,8 +241,7 @@ impl BluePrint {
                         if resource == &Resource::Geode {
                             break;
                         }
-                    } else {
-                    }
+                    } 
                 }
 
                 // do not pile resources if we can build can_build_anything

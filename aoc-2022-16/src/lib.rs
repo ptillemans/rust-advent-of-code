@@ -305,8 +305,7 @@ pub fn best_path(valves: &[Valve], start: &ValveId, time: u32) -> u32{
     let mut open = vec![(vec![start.clone()], vec![(0, time)], 0, time)];
     let mut best = (vec![], vec![], 0, 0);
 
-    while !open.is_empty() {
-        let (path, contrib, pressure, time_remaining) = open.pop().unwrap();
+    while let Some((path, contrib, pressure, time_remaining)) = open.pop() {
         if pressure > best.2 {
             best = (path.clone(), contrib.clone(), pressure, time_remaining);
         }
@@ -343,8 +342,7 @@ pub fn best_path2(valves: &[Valve], start: &ValveId, time: u32) -> u32{
     let mut open = vec![(vec![start.clone()], 0, time, vec![start.clone()], 0, time)];
     let mut best = (vec![], 0, 0, vec![], 0, 0);
 
-    while !open.is_empty() {
-        let (path_h, pressure_h, time_remaining_h, path_e, pressure_e, time_remaining_e) = open.pop().unwrap();
+    while let Some((path_h, pressure_h, time_remaining_h, path_e, pressure_e, time_remaining_e))  = open.pop() {
         if pressure_h + pressure_e  > best.1 + best.4 {
             best = (path_h.clone(), pressure_h, time_remaining_h, path_e.clone(), pressure_e, time_remaining_e);
         }

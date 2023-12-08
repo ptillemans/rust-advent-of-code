@@ -10,6 +10,7 @@ fn fabric_used(input: &InputModel) -> Fabric {
     for rect in &input.rectangles {
         let (x0, y0) = rect.position;
         let (w, h) = rect.size;
+        #[allow(clippy::needless_range_loop)]
         for y in y0..y0 + h {
             for x in x0..x0 + w {
                 fabric[x][y] += 1
@@ -24,7 +25,7 @@ fn part1(input: &InputModel) -> Result<String, AocError> {
     let overlap: usize = (0..1000)
         .map(|x| fabric[x].into_iter().filter(|&c| c > 1).count())
         .sum();
-    return Ok(overlap.to_string());
+    Ok(overlap.to_string())
 }
 
 fn is_non_overlapping(fabric: &Fabric, rect: &Rectangle) -> bool {
@@ -40,8 +41,7 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
     input
         .rectangles
         .iter()
-        .filter(|rect| is_non_overlapping(&fabric, rect))
-        .next()
+        .find(|rect| is_non_overlapping(&fabric, rect))
         .map(|rect| rect.id.to_string())
         .ok_or(AocError::NoSolution)
 }

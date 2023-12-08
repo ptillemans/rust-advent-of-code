@@ -9,9 +9,9 @@ fn part1(input: &InputModel) -> Result<String, AocError> {
     let result = input.races.iter()
         .map(|(t, d)| solve_equation(*t as i64, *d as i64))
         .map(|(x1, x2)| x2 - x1 + 1)
-        .fold(1, |acc, x| acc * x);
+        .product::<i64>();
 
-    return Ok(result.to_string());
+    Ok(result.to_string())
    
 }
 
@@ -32,13 +32,13 @@ fn solve_equation(t: i64, d: i64) -> (i64, i64) {
         x2 -= 1
     }
     println!("{} {} {} {}", t, d, x1, x2);
-    return  (x1, x2);
+    (x1, x2)
     
 }
 fn part2(input: &InputModel) -> Result<String, AocError> {
     let (x1, x2) = solve_equation(input.part2_time as i64, input.part2_distance as i64);
     let result = x2 - x1 + 1;
-    return Ok(result.to_string());
+    Ok(result.to_string())
 }
 
 fn main() -> Result<(), AocError> {

@@ -34,7 +34,7 @@ impl FromStr for InputModel {
     }
 }
 
-pub(self) mod parsers {
+mod parsers {
     use super::Rectangle;
     use nom::IResult;
     use nom::bytes::complete::{is_a, tag};

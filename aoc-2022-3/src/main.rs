@@ -23,7 +23,7 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
                     acc.intersection(&items).cloned().collect()
                 })
             })
-        .filter_map(|common_items| priority(common_items))
+        .filter_map(priority)
         .sum::<usize>()
         .to_string())
 }

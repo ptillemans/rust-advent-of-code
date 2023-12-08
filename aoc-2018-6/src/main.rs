@@ -12,30 +12,27 @@ fn part1(input: &InputModel) -> Result<String,AocError> {
         .chain(grid.iter().map(|row| &row[0]))
         .chain(grid.iter().map(|row| &row[row.len() - 1]))
         .filter_map(|cell| match cell {
-            Cell::RiskLevel(_, point) => Some(point.clone()),
+            Cell::RiskLevel(_, point) => Some(*point),
             _ => None,
         })
         .collect::<HashSet<_>>();
     let mut areas: HashMap<(i32, i32), i32> = HashMap::new();
     for row in grid {
         for cell in row {
-            match cell {
-                Cell::RiskLevel(_, point) => {
-                    if !edge_points.contains(&point) {
-                        *areas.entry(point).or_insert(0) += 1;
-                    }
-                },
-                _ => {},
+            if let Cell::RiskLevel(_, point) = cell {
+                if !edge_points.contains(&point) {
+                    *areas.entry(point).or_insert(0) += 1;
+                }
             }
         }
     }
     let max_area = areas.values().max().unwrap() + 1;
-    return Ok(max_area.to_string())
+    Ok(max_area.to_string())
 }
 
 fn part2(input: &InputModel, max_len: i32) -> Result<String, AocError> {
     let count = count_safe_locations(&input.points, max_len);
-    return Ok(count.to_string())
+    Ok(count.to_string())
 }
 
 fn main() -> Result<(), AocError> {

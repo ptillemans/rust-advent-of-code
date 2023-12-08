@@ -24,9 +24,9 @@ impl FromStr for InputModel {
 }
 
 pub fn all_unique(window: &str) -> bool {
-    let mut chars = window.chars();
+    let chars = window.chars();
     let mut seen = std::collections::HashSet::new();
-    while let Some(c) = chars.next() {
+    for c in chars {
         if seen.contains(&c) {
             return false;
         }

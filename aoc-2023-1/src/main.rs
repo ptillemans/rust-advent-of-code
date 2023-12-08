@@ -60,7 +60,7 @@ fn lines_to_number(lines: Vec<String>) -> Vec<u32> {
 }
 fn part1(_input: &InputModel) -> Result<String,AocError> {
     let sum = lines_to_number(_input.lines.clone()).iter().sum::<u32>();
-    return Ok(sum.to_string())
+    Ok(sum.to_string())
 }
 
 fn part2(input: &InputModel) -> Result<String, AocError> {
@@ -68,7 +68,7 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
         .filter_map(|line| find_first_and_last(line))
         .map(|(first, last)| first * 10 + last)
         .sum::<u32>();
-    return Ok(sum.to_string())
+    Ok(sum.to_string())
 }
 
 fn main() -> Result<(), AocError> {

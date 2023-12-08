@@ -1,5 +1,5 @@
 #![feature(test)]
-use aoc_2023_7::{AocError, Hand, Hand2, InputModel};
+use aoc_2023_7::{AocError, Hand2, InputModel};
 
 const INPUT: &str = include_str!("../data/input.txt");
 

@@ -294,9 +294,9 @@ impl Chamber {
             let height = self.max_height() as i64;
             if let Some((n, h)) = self.cache.get(&key) {
                 let period = self.n as i64 - n;
-                if ((rounds as i64 - *n as i64) % period) == 0 {
+                if ((rounds as i64 - *n) % period) == 0 {
                     let delta : i64 = height - h;
-                    let rest : i64 = rounds as i64 - *n as i64;
+                    let rest : i64 = rounds as i64 - *n;
                     let result = h + delta*(rest/period);
                     return result as usize
                 }
