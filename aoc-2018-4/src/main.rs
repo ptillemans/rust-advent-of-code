@@ -5,7 +5,7 @@ const INPUT: &str = include_str!("../data/input.txt");
 
 type GuardPatterns = HashMap<Guard, [u16; 60]>;
 
-fn aggregate_sleep_patterns(events: &Vec<Event>) -> GuardPatterns {
+fn aggregate_sleep_patterns(events: &[Event]) -> GuardPatterns {
     let naps = events.iter()
         .scan(
             (Guard { id: 0 }, datetime!(1000-01-01 00:00)),
@@ -18,7 +18,7 @@ fn aggregate_sleep_patterns(events: &Vec<Event>) -> GuardPatterns {
                     *sleep_time = *dt;
                     Some((*guard, 0, 0))
                 }
-                Event::WakesUp(dt) => Some((*guard, sleep_time.minute(), dt.minute()).clone()),
+                Event::WakesUp(dt) => Some((*guard, sleep_time.minute(), dt.minute())),
             },
         )
         .filter(|(_, _, till)| *till > 0);
@@ -44,11 +44,11 @@ fn part1(input: &InputModel) -> Result<String, AocError> {
         .ok_or(AocError::NoSolution)?;
 
     let pattern = patterns.get(max_sleep_guard).unwrap();
-    let max_minute = (0 as usize ..60)
+    let max_minute = (0_usize ..60)
         .max_by(|&a, &b| pattern[a].cmp(&pattern[b]))
         .ok_or(AocError::NoSolution)?;
 
-    return Ok((max_sleep_guard.id * max_minute).to_string());
+    Ok((max_sleep_guard.id * max_minute).to_string())
 }
 
 fn part2(input: &InputModel) -> Result<String, AocError> {
@@ -64,11 +64,11 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
         .ok_or(AocError::NoSolution)?;
 
     let pattern = patterns.get(max_sleep_guard).unwrap();
-    let max_minute = (0 as usize ..60)
+    let max_minute = (0_usize ..60)
         .max_by(|&a, &b| pattern[a].cmp(&pattern[b]))
         .ok_or(AocError::NoSolution)?;
 
-    return Ok((max_sleep_guard.id * max_minute).to_string());
+    Ok((max_sleep_guard.id * max_minute).to_string())
 }
 
 fn main() -> Result<(), AocError> {
@@ -160,7 +160,7 @@ mod parsers {
 
     pub fn parse_instant(s: &str) -> IResult<&str, PrimitiveDateTime> {
         let format = format_description!("[year]-[month]-[day] [hour]:[minute]");
-        delimited(char('['), take(16 as usize), char(']'))(s)
+        delimited(char('['), take(16_usize), char(']'))(s)
             .map(|(s, dt)| (s, PrimitiveDateTime::parse(dt, format).unwrap()))
     }
 
