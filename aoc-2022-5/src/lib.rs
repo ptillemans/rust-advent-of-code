@@ -49,7 +49,7 @@ impl Crate {
     fn from_str(s: &str) -> Result<Crate, AocError> {
         s.chars()
             .next()
-            .map(|c| Crate(c))
+            .map(Crate)
             .ok_or(AocError::ParseError)
     }
 
@@ -81,7 +81,7 @@ impl Stack {
     }
     
     pub fn from_chars(stack: Vec<char>) -> Stack {
-        Stack(stack.into_iter().map(|c| Crate(c)).collect())
+        Stack(stack.into_iter().map(Crate).collect())
     }
 
     pub fn push(&mut self, c: Crate) {
@@ -100,6 +100,15 @@ impl Stack {
         self.0.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}
+
+impl Default for Stack {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -120,7 +129,7 @@ impl Stacks {
             let width = stack_lines.iter().map(|s| s.len()).max().unwrap();
             let mut stacks = vec![Stack::new(); width];
             for stack_line in stack_lines.iter().rev() {
-                for (i, crate_) in stack_line.into_iter().enumerate() {
+                for (i, crate_) in stack_line.iter().enumerate() {
                     if let Some(c) = crate_ {
                         stacks[i].push(*c);
                     }
@@ -136,7 +145,7 @@ impl Stacks {
     }
 
     fn pop(&mut self, i: usize) -> Result<Crate, AocError> {
-        if i <= 0 {
+        if i == 0 {
             return Err(AocError::IllegalStackError);
         }
         let stacks = &mut self.0;
@@ -147,14 +156,15 @@ impl Stacks {
     }
     
     fn push(&mut self, i: usize, c: Crate) -> Result<(),AocError> {
-        if i <= 0 {
+        if i == 0 {
             return Err(AocError::IllegalStackError);
         }
         let stacks = &mut self.0;
         if i > stacks.len() {
             return Err(AocError::IllegalStackError);
         }
-        Ok(stacks[i-1].push(c))
+        stacks[i-1].push(c);
+        Ok(())
     }
 
     pub fn apply_move_9000(&mut self, m: Move) -> Result<(), AocError> {
