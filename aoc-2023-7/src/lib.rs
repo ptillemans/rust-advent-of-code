@@ -248,37 +248,18 @@ pub struct Hand2 {
 
     
 fn strongest_hand(hand: &[Card]) -> Vec<Card> {
-    let candidates = hand.iter().cloned()
+    let candidate = hand.iter().cloned()
         .filter(|card| *card != Card::Joker)
         .unique()
-        .collect::<Vec<Card>>();
-    if candidates.len() == 0 {
-        return vec![Card::Ace, Card::Ace, Card::Ace, Card::Ace, Card::Ace];
+        .map(|c| (hand.iter().filter(|card| *card == &c).count(), c))
+        .max()
+        .map(|(_, c)| c);
+    
+    if let Some(joker) = candidate {
+        hand.iter().cloned().map(|card| if card == Card::Joker { joker } else { card }).collect() 
+    } else {
+        vec![Card::Ace, Card::Ace, Card::Ace, Card::Ace, Card::Ace]
     }
-    let strongest = (0..hand.len())
-        .fold(hand.to_vec(), |cards, i| match cards[i] {
-        Card::Joker => candidates
-            .iter()
-            .map(|card| {
-                let mut new_cards = cards.clone();
-                new_cards[i] = *card;
-                strongest_hand(&new_cards)
-            })
-                .max_by(|a, b| {
-                    let a_ranks = calc_ranks(a);
-                    let b_ranks = calc_ranks(b);
-                    let ord = a_ranks.cmp(&b_ranks);
-                    if ord == Ordering::Equal {
-                        a.cmp(b)
-                    } else {
-                       ord 
-                    }
-                })
-                .unwrap(),
-        _ => cards
-    });
-
-    strongest
 }
 
         
