@@ -19,7 +19,7 @@ pub fn next_number(ns: &[i64]) -> Option<i64> {
     ns.last().and_then(|&last| {
         let ds = differences(ns);
         if ds.iter().all(|&d| d == 0) {
-            return Some(last);
+            Some(last)
         } else {
             next_number(&ds).map(|d| last + d)
         }
@@ -30,7 +30,7 @@ pub fn prev_number(ns: &[i64]) -> Option<i64> {
     ns.first().and_then(|&first| {
         let ds = differences(ns);
         if ds.iter().all(|&d| d == 0) {
-            return Some(first);
+            Some(first)
         } else {
             prev_number(&ds).map(|d| first - d)
         }
@@ -44,7 +44,7 @@ impl FromStr for InputModel {
         let measurements = s
             .lines()
             .map(|line| {
-                line.split(" ")
+                line.split(' ')
                     .map(|s| s.parse::<i64>())
                     .collect::<Result<Vec<_>, _>>()
             })
@@ -52,7 +52,7 @@ impl FromStr for InputModel {
             .expect("Error parsing input");
 
         Ok(InputModel {
-            measurements: measurements,
+            measurements,
         })
     }
 }
