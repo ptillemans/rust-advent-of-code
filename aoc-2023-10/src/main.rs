@@ -177,11 +177,13 @@ L7JLJL-JLJLJL--JLJ.L";
         b.iter(|| INPUT.parse::<InputModel>().unwrap())
     }
 
+    #[bench]
     fn bench_part1(b: &mut Bencher) {
         let data = INPUT.parse::<InputModel>().unwrap();
         b.iter(|| part1(&data))
     }
 
+    #[bench]
     fn bench_part2(b: &mut Bencher) {
         let data = INPUT.parse::<InputModel>().unwrap();
         b.iter(|| part2(&data))
