@@ -1,5 +1,5 @@
-use std::str::FromStr;
 use itertools::iterate;
+use std::str::FromStr;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct InputModel {
@@ -20,10 +20,26 @@ impl Pipe {
 
         let diff = (self.loc.0 - next.loc.0, self.loc.1 - next.loc.1);
         match diff {
-            (0, -1) => next.section == Section::Vertical || next.section == Section::CornerNE || next.section == Section::CornerNW,
-            (0, 1) => next.section == Section::Vertical || next.section == Section::CornerSE || next.section == Section::CornerSW,
-            (1, 0) => next.section == Section::Horizontal || next.section == Section::CornerNE || next.section == Section::CornerSE,
-            (-1, 0) => next.section == Section::Horizontal || next.section == Section::CornerNW || next.section == Section::CornerSW,
+            (0, -1) => {
+                next.section == Section::Vertical
+                    || next.section == Section::CornerNE
+                    || next.section == Section::CornerNW
+            }
+            (0, 1) => {
+                next.section == Section::Vertical
+                    || next.section == Section::CornerSE
+                    || next.section == Section::CornerSW
+            }
+            (1, 0) => {
+                next.section == Section::Horizontal
+                    || next.section == Section::CornerNE
+                    || next.section == Section::CornerSE
+            }
+            (-1, 0) => {
+                next.section == Section::Horizontal
+                    || next.section == Section::CornerNW
+                    || next.section == Section::CornerSW
+            }
             _ => false,
         }
     }
@@ -72,16 +88,15 @@ impl Pipe {
     }
 
     pub fn find_path(&self, pipes: &[Pipe], prev_pipe: &Pipe) -> Option<Vec<Pipe>> {
-        iterate((*prev_pipe, *self, vec![*self]), |(last, this,  path)| {
-            
+        iterate((*prev_pipe, *self, vec![*self]), |(last, this, path)| {
             let next_pipes = this.connecting_pipes(&pipes);
             let next_pipe = next_pipes
                 .iter()
                 .filter(|&p| *p != *last && !path.contains(p))
                 .cloned()
                 .next();
-            let mut path =path.clone();
-            if let Some(next_pipe) = next_pipe  {
+            let mut path = path.clone();
+            if let Some(next_pipe) = next_pipe {
                 if !path.contains(&next_pipe) {
                     path.push(next_pipe);
                     (*this, next_pipe, path)
@@ -92,11 +107,9 @@ impl Pipe {
                 (*this, *this, path)
             }
         })
-            .find(|(last, this, path)| this.section == Section::Start || *last == *this)
-            .map(|(_, _, path)| path)
+        .find(|(last, this, path)| this.section == Section::Start || *last == *this)
+        .map(|(_, _, path)| path)
     }
-
-
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
@@ -127,7 +140,6 @@ impl FromStr for Section {
     }
 }
 
-impl Section {}
 #[derive(thiserror::Error, Debug)]
 pub enum AocError {
     #[error("Error parsing the input")]
@@ -168,8 +180,10 @@ pub fn find_start(pipes: &[Pipe]) -> Pipe {
 
 pub fn find_loop(pipes: &[Pipe]) -> Option<Vec<Pipe>> {
     let start = find_start(pipes);
-    start.connecting_pipes(pipes).iter()
-        .find_map(|p| start.find_path(pipes, p))
+    start
+        .connecting_pipes(pipes)
+        .iter()
+        .find_map(|p| p.find_path(pipes, &start))
 }
 
 #[cfg(test)]
@@ -189,7 +203,6 @@ mod tests {
 SJ.L7
 |F--J
 LJ...";
-
 
     const TEST_INPUT_2_2: &str = "-L|F7
 7S-7|
@@ -311,9 +324,8 @@ L|-JF";
 
         assert!(pipes[7].valid_next_pipe(&pipes[6]));
         assert!(pipes[7].valid_next_pipe(&pipes[4]));
-        
     }
-    
+
     #[test]
     fn test_find_path() {
         let input = InputModel::from_str(TEXT_INPUT).unwrap();
@@ -321,10 +333,11 @@ L|-JF";
         let path = pipes[1].find_path(&pipes, &pipes[0]);
         assert_eq!(
             path,
-            Some(vec![pipes[1], pipes[2], pipes[4], pipes[7], pipes[6], pipes[5], pipes[3], pipes[0]])
+            Some(vec![
+                pipes[1], pipes[2], pipes[4], pipes[7], pipes[6], pipes[5], pipes[3], pipes[0]
+            ])
         );
 
-
         let input = InputModel::from_str(TEXT_INPUT_2).unwrap();
         let pipes = input.pipes;
         let start = find_start(&pipes);
@@ -336,7 +349,6 @@ L|-JF";
         let path = next_pipes[1].find_path(&pipes, &start).unwrap();
         assert_eq!(path.len(), 16);
 
-
         let input = InputModel::from_str(TEXT_INPUT_2).unwrap();
         let pipes = input.pipes;
         let start = find_start(&pipes);
@@ -346,6 +358,14 @@ L|-JF";
         let path = next_pipes[0].find_path(&pipes, &start).unwrap();
         assert_eq!(path.len(), 16);
         let path = next_pipes[1].find_path(&pipes, &start).unwrap();
+        assert_eq!(path.len(), 16);
+    }
+
+    #[test]
+    fn test_find_loop() {
+        let input = InputModel::from_str(TEXT_INPUT_2).unwrap();
+        let pipes = input.pipes;
+        let path = find_loop(&pipes).unwrap();
         assert_eq!(path.len(), 16);
     }
 }
