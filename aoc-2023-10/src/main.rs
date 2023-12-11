@@ -1,5 +1,6 @@
 #![feature(test)]
-use aoc_2023_10::{find_loop, AocError, InputModel, Pipe, Section};
+use aoc_2023_10::{find_loop, find_start, AocError, InputModel, Location, Section};
+use rayon::prelude::*;
 
 const INPUT: &str = include_str!("../data/input.txt");
 
@@ -10,48 +11,49 @@ fn part1(input: &InputModel) -> Result<String, AocError> {
 }
 
 fn part2(input: &InputModel) -> Result<String, AocError> {
-    let pipes = input.pipes.clone();
-    let mut path = find_loop(&pipes).unwrap();
+    let mut pipes = input.pipes.clone();
+    let path = find_loop(&pipes).unwrap();
 
+    let start_location = find_start(&pipes);
     let start_symbol = start_symbol(&path);
+    pipes.insert(start_location, start_symbol);
 
-    let pl = path.len();
-    let start = Pipe{loc: path[pl - 1].loc, section: start_symbol};
-    path[pl - 1] = start;
+    let max_x = path.iter().map(|p| p.0).max().unwrap();
+    let max_y = path.iter().map(|p| p.1).max().unwrap();
 
-    let max_x = path.iter().map(|p| p.loc.0).max().unwrap();
-    let max_y = path.iter().map(|p| p.loc.1).max().unwrap();
-    
-    let inner = (0..=max_x)
+    let all_locations = (0..=max_x)
         .flat_map(|x| (0..=max_y).map(move |y| (x, y)))
-        .filter(|(x, y)| path.iter().find(|p| (*p).loc == (*x, *y)).is_none())
+        .collect::<Vec<_>>();
+    
+    let inner =
+        all_locations.par_iter()
+        .filter(|(x, y)| path.iter().find(|p| **p == (*x, *y)).is_none())
         .filter(|(x, y)| {
             let to_left = (0..*x)
-                .filter_map(|tx| path.iter().find(|p| p.loc == (tx, *y)))
-                .map(|p| p.section)
+                .filter_map(|tx| path.iter().find(|p| **p == (tx, *y)))
+                .map(|p| pipes.get(p).unwrap())
                 .collect::<Vec<_>>();
-            let crossings = to_left.iter()
-                .fold((None, 0),|(last_corner, count), section| 
-                    match section {
-                        Section::Horizontal => (last_corner, count),
-                        Section::Vertical => (last_corner, count + 1),
-                        Section::CornerNE => (Some(Section::CornerNE), count),
-                        Section::CornerSE => (Some(Section::CornerSE), count),
-                        Section::CornerSW => match last_corner {
-                            Some(Section::CornerNE) => (None, count + 1),
-                            Some(Section::CornerSE) => (None, count),
-                            _ => panic!("Unexpected corner: {:?}", section),
-                        },
-                        Section::CornerNW => match last_corner {
-                            Some(Section::CornerNE) => (None, count),
-                            Some(Section::CornerSE) => (None, count + 1),
-                            _ => panic!("Unexpected corner: {:?}", section),
-                        },
-                        _ => panic!("Unexpected section: {:?}", section),
-                    }
-                ).1;
+            let crossings = to_left
+                .iter()
+                .fold((None, 0), |(last_corner, count), section| match section {
+                    Section::Horizontal => (last_corner, count),
+                    Section::Vertical => (last_corner, count + 1),
+                    Section::CornerNE => (Some(Section::CornerNE), count),
+                    Section::CornerSE => (Some(Section::CornerSE), count),
+                    Section::CornerSW => match last_corner {
+                        Some(Section::CornerNE) => (None, count + 1),
+                        Some(Section::CornerSE) => (None, count),
+                        _ => panic!("Unexpected corner: {:?}", section),
+                    },
+                    Section::CornerNW => match last_corner {
+                        Some(Section::CornerNE) => (None, count),
+                        Some(Section::CornerSE) => (None, count + 1),
+                        _ => panic!("Unexpected corner: {:?}", section),
+                    },
+                    _ => panic!("Unexpected section: {:?}", section),
+                })
+                .1;
             crossings % 2 == 1
-                
         })
         .collect::<Vec<_>>();
 
@@ -60,15 +62,18 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
     Ok(n.to_string())
 }
 
-
-fn start_symbol(path: &[Pipe]) -> Section {
+fn start_symbol(path: &[Location]) -> Section {
     let pl = path.len();
     let start = path[pl - 1];
     let first = path[0];
     let last = path[pl - 2];
 
-    let delta = (start.loc.0 - first.loc.0, start.loc.1 - first.loc.1,
-                 last.loc.0 - start.loc.0, last.loc.1 - start.loc.1);
+    let delta = (
+        start.0 - first.0,
+        start.1 - first.1,
+        last.0 - start.0,
+        last.1 - start.1,
+    );
 
     match delta {
         (0, -1, 0, -1) | (0, 1, 0, 1) => Section::Vertical,
@@ -77,11 +82,9 @@ fn start_symbol(path: &[Pipe]) -> Section {
         (0, -1, 1, 0) | (-1, 0, 0, 1) => Section::CornerSE,
         (1, 0, 0, 1) | (0, -1, -1, 0) => Section::CornerSW,
         (1, 0, 0, -1) | (0, 1, -1, 0) => Section::CornerNW,
-        _ => panic!("Unexpected delta: {:?}", delta),
+        _ => panic!("Unexpected delta: {:?}", delta)
     }
-
 }
-
 
 fn main() -> Result<(), AocError> {
     let input: InputModel = INPUT.parse::<InputModel>()?;
