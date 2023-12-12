@@ -1,5 +1,5 @@
 use aoc_common::position::Position;
-use std::str::FromStr;
+use std::{str::FromStr, collections::HashSet};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct InputModel {
@@ -30,7 +30,7 @@ impl FromStr for InputModel {
     }
 }
 
-fn empty_rows(input: &InputModel) -> Vec<i32> {
+fn empty_rows(input: &InputModel) -> HashSet<i32> {
     let rows: Vec<i32> = input
         .galaxies
         .iter()
@@ -42,7 +42,7 @@ fn empty_rows(input: &InputModel) -> Vec<i32> {
     (0..=row_max).filter(|r| !rows.contains(r)).collect()
 }
 
-fn empty_cols(input: &InputModel) -> Vec<i32> {
+fn empty_cols(input: &InputModel) -> HashSet<i32> {
     let columns: Vec<i32> = input
         .galaxies
         .iter()
@@ -54,7 +54,7 @@ fn empty_cols(input: &InputModel) -> Vec<i32> {
     (0..=column_max).filter(|r| !columns.contains(r)).collect()
 }
 
-pub type EmptySpace = (Vec<i32>, Vec<i32>);
+pub type EmptySpace = (HashSet<i32>, HashSet<i32>);
 
 pub fn empty_space(input: &InputModel) -> EmptySpace {
     (empty_cols(&input), empty_rows(&input))
@@ -115,7 +115,7 @@ mod tests {
     fn test_empty_rows() {
         let input = input_data();
         let actual = empty_rows(&input);
-        let expected = vec![3, 7];
+        let expected = vec![3, 7].into_iter().collect::<HashSet<_>>();
 
         assert_eq!(actual, expected)
     }
@@ -124,7 +124,7 @@ mod tests {
     fn test_empty_cols() {
         let input = input_data();
         let actual = empty_cols(&input);
-        let expected = vec![2, 5, 8];
+        let expected = vec![2, 5, 8].into_iter().collect::<HashSet<_>>();
 
         assert_eq!(actual, expected)
     }
@@ -133,7 +133,10 @@ mod tests {
     fn test_empty_space() {
         let input = input_data();
         let actual = empty_space(&input);
-        let expected = (vec![2, 5, 8], vec![3, 7]);
+        let expected = (
+            vec![2, 5, 8].into_iter().collect::<HashSet<_>>(),
+            vec![3, 7].into_iter().collect::<HashSet<_>>()
+        );
 
         assert_eq!(actual, expected)
     }

@@ -1,5 +1,8 @@
 #![feature(test)]
+use std::collections::HashSet;
+
 use aoc_2023_10::{find_loop, find_start, AocError, InputModel, Location, Section};
+use itertools::Itertools;
 use rayon::prelude::*;
 
 const INPUT: &str = include_str!("../data/input.txt");
@@ -13,6 +16,8 @@ fn part1(input: &InputModel) -> Result<String, AocError> {
 fn part2(input: &InputModel) -> Result<String, AocError> {
     let mut pipes = input.pipes.clone();
     let path = find_loop(&pipes).unwrap();
+    //let sorted_path = path.iter().cloned().sorted().collect::<Vec<_>>();
+    let path_set = path.iter().cloned().collect::<HashSet<_>>();
 
     let start_location = find_start(&pipes);
     let start_symbol = start_symbol(&path);
@@ -27,11 +32,13 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
     
     let inner =
         all_locations.par_iter()
-        .filter(|(x, y)| path.iter().find(|p| **p == (*x, *y)).is_none())
+        //.filter(|(x, y)| sorted_path.binary_search(&(*x, *y)).is_err())
+        .filter(|(x, y)| !path_set.contains(&(*x, *y)))
         .filter(|(x, y)| {
             let to_left = (0..*x)
-                .filter_map(|tx| path.iter().find(|p| **p == (tx, *y)))
-                .map(|p| pipes.get(p).unwrap())
+                //.filter_map(|tx| sorted_path.binary_search(&(tx, *y)).ok().map(|p| sorted_path[p]))
+                .filter(|tx| path_set.contains(&(*tx, *y)))
+                .map(|tx| pipes.get(&(tx, *y)).unwrap())
                 .collect::<Vec<_>>();
             let crossings = to_left
                 .iter()
