@@ -1,14 +1,40 @@
 #![feature(test)]
-use aoc_2023_12::{AocError, InputModel};
+use std::iter::repeat;
+
+use aoc_2023_12::{count_arrangements, AocError, InputModel};
 
 const INPUT: &str = include_str!("../data/input.txt");
 
-fn part1(_input: &InputModel) -> Result<String, AocError> {
-    return Ok("Not implemented".to_string());
+fn part1(input: &InputModel) -> Result<String, AocError> {
+    Ok(input
+        .lines
+        .iter()
+        .map(|(line, blocks)| count_arrangements(line, blocks))
+        .sum::<u64>()
+        .to_string())
 }
 
-fn part2(_input: &InputModel) -> Result<String, AocError> {
-    return Ok("Not implemented".to_string());
+fn part2(input: &InputModel) -> Result<String, AocError> {
+    Ok(input
+        .lines
+        .iter()
+        .map(|(line, blocks)| {
+            (
+                repeat(line)
+                    .take(5)
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join("?"),
+                repeat(blocks)
+                    .take(5)
+                    .flatten()
+                    .cloned()
+                    .collect::<Vec<_>>(),
+            )
+        })
+        .map(|(line, blocks)| count_arrangements(&line, &blocks))
+        .sum::<u64>()
+        .to_string())
 }
 
 fn main() -> Result<(), AocError> {
@@ -49,7 +75,7 @@ mod tests {
     #[test]
     fn test_part1() {
         let actual = part1(&input_data()).unwrap();
-        let expected = "";
+        let expected = "21";
 
         assert_eq!(actual, expected);
     }
@@ -57,7 +83,7 @@ mod tests {
     #[test]
     fn test_part2() {
         let actual = part2(&input_data()).unwrap();
-        let expected = "";
+        let expected = "525152";
 
         assert_eq!(actual, expected);
     }
