@@ -1,5 +1,5 @@
 use itertools::iterate;
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::{HashMap, HashSet}, str::FromStr};
 use rayon::prelude::*;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -103,17 +103,20 @@ pub fn find_path(
     let mut loc = *loc;
     let mut section = *section;
     let mut path = Vec::<Location>::with_capacity(10000);
+    let mut path_set = HashSet::<Location>::with_capacity(10000);
     path.push(loc);
+    path_set.insert(loc);
     let mut finished = false;
     while (section != Section::Start && !finished) {
         let next_pipes = connecting_pipes(&loc, &pipes);
         let next_pipe = next_pipes
             .iter()
-            .filter(|&l| *l != last && !path.contains(l))
+            .filter(|&l| *l != last && !path_set.contains(l))
             .next();
         if let Some(next_pipe) = next_pipe {
-            if !path.contains(&next_pipe) {
+            if !path_set.contains(&next_pipe) {
                 path.push(*next_pipe);
+                path_set.insert(*next_pipe);
                 section = *pipes.get(&next_pipe).unwrap();
                 last = loc;
                 loc = *next_pipe;
@@ -169,11 +172,8 @@ impl FromStr for InputModel {
     type Err = AocError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let lines = s.lines()
+        s.lines()
             .enumerate()
-            .collect::<Vec<_>>();
-
-        lines.par_iter()
             .flat_map(|(y, line)| {
                 line.chars()
                     .enumerate()
@@ -183,6 +183,7 @@ impl FromStr for InputModel {
                         let section = Section::from_str(&c.to_string())?;
                         Ok((loc, section))
                     })
+                    .collect::<Vec<_>>()
             })
             .collect::<Result<HashMap<Location, Section>, AocError>>()
             .map(|pipes| InputModel { pipes })
