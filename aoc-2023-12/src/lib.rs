@@ -34,6 +34,31 @@ impl FromStr for InputModel {
 
 // assume we are at the start of a possible block
 fn step(s: &str, blocks: &[u64], memo: &mut HashMap<(String, Vec<u64>), u64>) -> u64 {
+
+    fn empty_cell(s: &str, blocks: &[u64], memo: &mut HashMap<(String, Vec<u64>), u64>) -> u64 {
+        let space_alt: String = skip_empty(&s[1..]).to_string();
+        step(&space_alt, blocks, memo)
+    }
+
+    fn spring_cell(s: &str, blocks: &[u64], memo: &mut HashMap<(String, Vec<u64>), u64>) -> u64 {
+        let (block, rest) = s.split_at(blocks[0] as usize);
+        if block.chars().all(|c| c == '#' || c == '?') && !rest.starts_with('#') {
+            let next_blocks = &blocks[1..];
+            if rest.is_empty() {
+                if next_blocks.is_empty() {
+                    1
+                } else {
+                    0
+                }
+            } else {
+                step(skip_empty(&rest[1..]), next_blocks, memo)
+            }
+        } else {
+            0
+        }
+    }
+
+    
     if blocks.is_empty() {
         return if s.contains('#') { 0 } else { 1 };
     }
@@ -48,25 +73,11 @@ fn step(s: &str, blocks: &[u64], memo: &mut HashMap<(String, Vec<u64>), u64>) ->
     let mut arrangements = 0;
 
     if s.starts_with("?") || s.starts_with(".") {
-        let space_alt: String = skip_empty(&s[1..]).to_string();
-        arrangements += step(&space_alt, blocks, memo);
+        arrangements += empty_cell(s, blocks, memo);
     }
 
     if s.starts_with("#") || s.starts_with("?") {
-        let (block, rest) = s.split_at(blocks[0] as usize);
-        if block.chars().all(|c| c == '#' || c == '?') && !rest.starts_with('#') {
-            let next_blocks = &blocks[1..];
-            if rest.is_empty() && next_blocks.is_empty() {
-                arrangements += 1;
-            } else {
-                let rest = if rest.is_empty() {
-                    ""
-                } else {
-                    skip_empty(&rest[1..])
-                };
-                arrangements += step(rest, next_blocks, memo);
-            }
-        }
+        arrangements += spring_cell(s, blocks, memo);
     }
 
     memo.insert((s.to_string(), blocks.to_vec()), arrangements);
