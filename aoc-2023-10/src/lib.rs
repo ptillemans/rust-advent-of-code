@@ -202,6 +202,7 @@ pub fn find_loop(pipes: &HashMap<Location, Section>) -> Option<Vec<Location>> {
     let start = find_start(pipes);
     connecting_pipes(&start, pipes)
         .iter()
+        .filter(|&p| valid_next_section(&start, &p, pipes))
         .find_map(|p| find_path(p, &start, pipes))
 }
 

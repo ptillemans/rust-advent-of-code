@@ -2,7 +2,6 @@
 use std::collections::HashSet;
 
 use aoc_2023_10::{find_loop, find_start, AocError, InputModel, Location, Section};
-use itertools::Itertools;
 use rayon::prelude::*;
 
 const INPUT: &str = include_str!("../data/input.txt");
