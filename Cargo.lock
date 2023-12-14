@@ -325,6 +325,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "aoc-2023-14"
+version = "0.1.0"
+dependencies = [
+ "itertools 0.10.5",
+ "thiserror",
+]
+
+[[package]]
 name = "aoc-2023-2"
 version = "0.1.0"
 dependencies = [
