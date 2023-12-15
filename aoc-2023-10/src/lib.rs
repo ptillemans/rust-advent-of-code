@@ -1,6 +1,4 @@
-use itertools::iterate;
 use std::{collections::{HashMap, HashSet}, str::FromStr};
-use rayon::prelude::*;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct InputModel {
@@ -87,7 +85,7 @@ pub fn connecting_pipes((x, y): &Location, pipes: &HashMap<Location, Section>) -
     }
     let ls = locations
         .iter()
-        .filter(|loc| valid_next_section(&(x, y), &loc, &pipes))
+        .filter(|loc| valid_next_section(&(x, y), loc, pipes))
         .cloned()
         .collect::<Vec<_>>();
     ls
@@ -107,17 +105,16 @@ pub fn find_path(
     path.push(loc);
     path_set.insert(loc);
     let mut finished = false;
-    while (section != Section::Start && !finished) {
-        let next_pipes = connecting_pipes(&loc, &pipes);
+    while section != Section::Start && !finished {
+        let next_pipes = connecting_pipes(&loc, pipes);
         let next_pipe = next_pipes
             .iter()
-            .filter(|&l| *l != last && !path_set.contains(l))
-            .next();
+            .find(|&l| *l != last && !path_set.contains(l));
         if let Some(next_pipe) = next_pipe {
-            if !path_set.contains(&next_pipe) {
+            if !path_set.contains(next_pipe) {
                 path.push(*next_pipe);
                 path_set.insert(*next_pipe);
-                section = *pipes.get(&next_pipe).unwrap();
+                section = *pipes.get(next_pipe).unwrap();
                 last = loc;
                 loc = *next_pipe;
             } else {
@@ -202,7 +199,7 @@ pub fn find_loop(pipes: &HashMap<Location, Section>) -> Option<Vec<Location>> {
     let start = find_start(pipes);
     connecting_pipes(&start, pipes)
         .iter()
-        .filter(|&p| valid_next_section(&start, &p, pipes))
+        .filter(|&p| valid_next_section(&start, p, pipes))
         .find_map(|p| find_path(p, &start, pipes))
 }
 

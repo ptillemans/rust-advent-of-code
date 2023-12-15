@@ -1,4 +1,3 @@
-use itertools::*;
 use std::{str::FromStr, collections::HashMap};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -19,9 +18,9 @@ impl FromStr for InputModel {
         let lines = s
             .lines()
             .map(|l| {
-                let (line, blocks) = l.split_once(" ").ok_or(AocError::ParseError)?;
+                let (line, blocks) = l.split_once(' ').ok_or(AocError::ParseError)?;
                 let blocks = blocks
-                    .split(",")
+                    .split(',')
                     .map(|b| b.parse::<u64>().unwrap())
                     .collect::<Vec<_>>();
                 Ok((line.to_string(), blocks))
@@ -36,7 +35,7 @@ impl FromStr for InputModel {
 fn step(s: &str, blocks: &[u64], memo: &mut HashMap<(String, Vec<u64>), u64>) -> u64 {
 
     fn operational_spring(s: &str, blocks: &[u64], memo: &mut HashMap<(String, Vec<u64>), u64>) -> u64 {
-        step(&skip_operational(&s[1..]).to_string(), blocks, memo)
+        step(skip_operational(&s[1..]), blocks, memo)
     }
 
     fn broken_spring(s: &str, blocks: &[u64], memo: &mut HashMap<(String, Vec<u64>), u64>) -> u64 {
@@ -67,11 +66,11 @@ fn step(s: &str, blocks: &[u64], memo: &mut HashMap<(String, Vec<u64>), u64>) ->
     
     let mut arrangements = 0;
 
-    if s.starts_with("?") || s.starts_with(".") {
+    if s.starts_with('?') || s.starts_with('.') {
         arrangements += operational_spring(s, blocks, memo);
     }
 
-    if s.starts_with("#") || s.starts_with("?") {
+    if s.starts_with('#') || s.starts_with('?') {
         arrangements += broken_spring(s, blocks, memo);
     }
 
@@ -115,7 +114,7 @@ pub fn count_arrangements_nfa(s: &str, blocks: &[u64]) -> u64 {
             }
             if (s[si] == '#' || s[si] == '?') &&  bi < blocks.len() && !expect_dot {
                 if s[si] == '?' && bc == 0  {
-                    let v =nstates.entry(State { si: si + 1, bi: bi, bc: bc, expect_dot: false }).or_insert(0);
+                    let v =nstates.entry(State { si: si + 1, bi, bc, expect_dot: false }).or_insert(0);
                     *v += count;
                 }
                 bc += 1;
@@ -123,11 +122,11 @@ pub fn count_arrangements_nfa(s: &str, blocks: &[u64]) -> u64 {
                     let v = nstates.entry(State { si: si + 1, bi: bi + 1, bc: 0, expect_dot: true }).or_insert(0);
                     *v += count;
                 } else {
-                    let v = nstates.entry(State { si: si + 1, bi: bi, bc: bc, expect_dot: false }).or_insert(0);
+                    let v = nstates.entry(State { si: si + 1, bi, bc, expect_dot: false }).or_insert(0);
                     *v += count;
                 }
             } else if (s[state.si] == '.' || s[state.si] == '?') && bc == 0 {
-                let v = nstates.entry(State { si: si + 1, bi: bi, bc: bc, expect_dot: false }).or_insert(0);
+                let v = nstates.entry(State { si: si + 1, bi, bc, expect_dot: false }).or_insert(0);
                 *v += count;
             }
         }
@@ -208,7 +207,7 @@ mod tests {
     fn test_test_count_arrangements() {
         let input = TEST_INPUT.parse::<InputModel>().unwrap();
         let lines = input.lines;
-        let expected = vec![1, 4, 1, 1, 4, 10];
+        let expected = [1, 4, 1, 1, 4, 10];
 
         for i in 0..lines.len() {
             assert_eq!(
@@ -225,7 +224,7 @@ mod tests {
     fn test_test_count_arrangements_nfa() {
         let input = TEST_INPUT.parse::<InputModel>().unwrap();
         let lines = input.lines;
-        let expected = vec![1, 4, 1, 1, 4, 10];
+        let expected = [1, 4, 1, 1, 4, 10];
 
         for i in 0..lines.len() {
             assert_eq!(

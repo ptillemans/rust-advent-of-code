@@ -39,7 +39,7 @@ fn is_mirror_image(s1: &str, s2: &str) -> bool {
         .all(|(c1, c2)| c1 == c2)
 }
 
-pub fn find_horizontal_mirror(mirror: &Vec<String>) -> Option<usize> {
+pub fn find_horizontal_mirror(mirror: &[String]) -> Option<usize> {
     (1..mirror[0].len()).find(|i| {
         mirror
             .iter()
@@ -48,7 +48,7 @@ pub fn find_horizontal_mirror(mirror: &Vec<String>) -> Option<usize> {
     })
 }
 
-pub fn find_vertical_mirror(mirror: &Vec<String>) -> Option<usize> {
+pub fn find_vertical_mirror(mirror: &[String]) -> Option<usize> {
     let cols = (0..mirror[0].len())
         .map(|i| {
             mirror
@@ -60,7 +60,7 @@ pub fn find_vertical_mirror(mirror: &Vec<String>) -> Option<usize> {
     find_horizontal_mirror(&cols)
 }
 
-pub fn find_horizontal_smudge(mirror: &Vec<String>) -> Option<usize> {
+pub fn find_horizontal_smudge(mirror: &[String]) -> Option<usize> {
     (1..mirror[0].len()).find(|i| {
         mirror
             .iter()
@@ -69,7 +69,7 @@ pub fn find_horizontal_smudge(mirror: &Vec<String>) -> Option<usize> {
             .count() == 1})
 }
 
-pub fn find_vertical_smudge(mirror: &Vec<String>) -> Option<usize> {
+pub fn find_vertical_smudge(mirror: &[String]) -> Option<usize> {
     let cols = (0..mirror[0].len())
         .map(|i| {
             mirror
