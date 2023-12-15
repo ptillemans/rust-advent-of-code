@@ -6,12 +6,12 @@ const INPUT: &str = include_str!("../data/input.txt");
 fn part1(input: &InputModel) -> Result<String, AocError> {
     let platform = slide_north(&input.platform);
     let score = load_north(&platform);
-    return Ok(score.to_string());
+    Ok(score.to_string())
 }
 
 fn part2(input: &InputModel) -> Result<String, AocError> {
     let load = spin_load(&input.platform, 1000000000);
-    return Ok(load.to_string());
+    Ok(load.to_string())
 }
 
 fn main() -> Result<(), AocError> {
