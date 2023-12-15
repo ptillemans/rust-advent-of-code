@@ -1,4 +1,4 @@
-use std::{str::FromStr, num::ParseFloatError, collections::HashMap};
+use std::str::FromStr;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct InputModel  {
@@ -39,7 +39,7 @@ pub fn hash(s: &str) -> u32 {
 }
 
 pub fn parse_instruction(s: &str) -> Instruction {
-    let mut parts = s.split('=').collect::<Vec<_>>();
+    let parts = s.split('=').collect::<Vec<_>>();
     if parts.len() == 2 {
         let label = parts[0].to_string();
         let slot = parts[1].parse::<u32>().unwrap();

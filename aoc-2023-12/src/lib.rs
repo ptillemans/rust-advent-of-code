@@ -35,23 +35,18 @@ impl FromStr for InputModel {
 // assume we are at the start of a possible block
 fn step(s: &str, blocks: &[u64], memo: &mut HashMap<(String, Vec<u64>), u64>) -> u64 {
 
-    fn empty_cell(s: &str, blocks: &[u64], memo: &mut HashMap<(String, Vec<u64>), u64>) -> u64 {
-        let space_alt: String = skip_empty(&s[1..]).to_string();
-        step(&space_alt, blocks, memo)
+    fn operational_spring(s: &str, blocks: &[u64], memo: &mut HashMap<(String, Vec<u64>), u64>) -> u64 {
+        step(&skip_operational(&s[1..]).to_string(), blocks, memo)
     }
 
-    fn spring_cell(s: &str, blocks: &[u64], memo: &mut HashMap<(String, Vec<u64>), u64>) -> u64 {
+    fn broken_spring(s: &str, blocks: &[u64], memo: &mut HashMap<(String, Vec<u64>), u64>) -> u64 {
         let (block, rest) = s.split_at(blocks[0] as usize);
         if block.chars().all(|c| c == '#' || c == '?') && !rest.starts_with('#') {
             let next_blocks = &blocks[1..];
             if rest.is_empty() {
-                if next_blocks.is_empty() {
-                    1
-                } else {
-                    0
-                }
+                if next_blocks.is_empty() {1} else {0}
             } else {
-                step(skip_empty(&rest[1..]), next_blocks, memo)
+                step(skip_operational(&rest[1..]), next_blocks, memo)
             }
         } else {
             0
@@ -62,7 +57,7 @@ fn step(s: &str, blocks: &[u64], memo: &mut HashMap<(String, Vec<u64>), u64>) ->
     if blocks.is_empty() {
         return if s.contains('#') { 0 } else { 1 };
     }
-    if s.len() < blocks.iter().sum::<u64>() as usize {
+    if s.len() < blocks.iter().sum::<u64>() as usize + blocks.len() - 1 {
         return 0;
     }
 
@@ -73,11 +68,11 @@ fn step(s: &str, blocks: &[u64], memo: &mut HashMap<(String, Vec<u64>), u64>) ->
     let mut arrangements = 0;
 
     if s.starts_with("?") || s.starts_with(".") {
-        arrangements += empty_cell(s, blocks, memo);
+        arrangements += operational_spring(s, blocks, memo);
     }
 
     if s.starts_with("#") || s.starts_with("?") {
-        arrangements += spring_cell(s, blocks, memo);
+        arrangements += broken_spring(s, blocks, memo);
     }
 
     memo.insert((s.to_string(), blocks.to_vec()), arrangements);
@@ -85,13 +80,13 @@ fn step(s: &str, blocks: &[u64], memo: &mut HashMap<(String, Vec<u64>), u64>) ->
     arrangements
 }
 
-fn skip_empty(s: &str) -> &str {
+fn skip_operational(s: &str) -> &str {
     s.trim_start_matches('.')
 }
 
 pub fn count_arrangements(s: &str, blocks: &[u64]) -> u64 {
     let mut memo = HashMap::new();
-    step(skip_empty(s), blocks, &mut memo)
+    step(skip_operational(s), blocks, &mut memo)
 }
 
 #[cfg(test)]

@@ -2,22 +2,22 @@
 use std::iter::repeat;
 
 use aoc_2023_12::{count_arrangements, AocError, InputModel};
+use rayon::prelude::*;
 
 const INPUT: &str = include_str!("../data/input.txt");
 
 fn part1(input: &InputModel) -> Result<String, AocError> {
     Ok(input
         .lines
-        .iter()
+        .par_iter()
         .map(|(line, blocks)| count_arrangements(line, blocks))
         .sum::<u64>()
         .to_string())
 }
 
 fn part2(input: &InputModel) -> Result<String, AocError> {
-    Ok(input
-        .lines
-        .iter()
+    Ok(input.lines
+        .par_iter()
         .map(|(line, blocks)| {
             (
                 repeat(line)
