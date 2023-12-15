@@ -10,7 +10,7 @@ fn part1(input: &InputModel) -> Result<String, AocError> {
 }
 
 fn sum_combinations(input: &InputModel, age: i32) -> u64 {
-    let empty_space = empty_space(&input);
+    let empty_space = empty_space(input);
 
     let new_positions = input.galaxies.iter()
         .map(|pos| position_after_expansion(pos, &empty_space, age))

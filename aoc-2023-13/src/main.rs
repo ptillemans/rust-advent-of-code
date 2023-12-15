@@ -9,7 +9,7 @@ fn part1(input: &InputModel) -> Result<String, AocError> {
         .iter()
         .map(|m| score(m.clone()))
         .sum::<usize>();
-    return Ok(score.to_string());
+    Ok(score.to_string())
 }
 
 fn part2(input: &InputModel) -> Result<String, AocError> {
@@ -18,7 +18,7 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
         .iter()
         .map(|m| smudge_score(m.clone()))
         .sum::<usize>();
-    return Ok(score.to_string());
+    Ok(score.to_string())
 }
 
 fn main() -> Result<(), AocError> {

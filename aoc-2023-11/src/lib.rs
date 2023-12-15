@@ -57,7 +57,7 @@ fn empty_cols(input: &InputModel) -> HashSet<i32> {
 pub type EmptySpace = (HashSet<i32>, HashSet<i32>);
 
 pub fn empty_space(input: &InputModel) -> EmptySpace {
-    (empty_cols(&input), empty_rows(&input))
+    (empty_cols(input), empty_rows(input))
 }
 
 pub fn position_after_expansion(pos: &Position, empty_space: &EmptySpace, age: i32) -> Position {

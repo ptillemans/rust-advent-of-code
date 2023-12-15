@@ -31,13 +31,13 @@ fn max<T:Ord> (a: T, b:T) -> T {
     }
 }
 
-pub fn bounds(trees: &Vec<Vec<char>>) -> (usize, usize) {
+pub fn bounds(trees: &[Vec<char>]) -> (usize, usize) {
     let l = trees.len();
     let w = trees[0].len();
     (l, w)
 }
 
-pub fn find_visible(trees: &Vec<Vec<char>>) -> Vec<Vec<bool>> {
+pub fn find_visible(trees: &[Vec<char>]) -> Vec<Vec<bool>> {
 
     let (l, w) = bounds(trees);
 
@@ -83,7 +83,7 @@ pub fn find_visible(trees: &Vec<Vec<char>>) -> Vec<Vec<bool>> {
     visible
 }
 
-pub fn scenic_score(trees: &Vec<Vec<char>>, pos: (usize, usize)) -> usize {
+pub fn scenic_score(trees: &[Vec<char>], pos: (usize, usize)) -> usize {
     let (l, w) = bounds(trees);
     let (x, y) = pos;
     let height = trees[x][y];

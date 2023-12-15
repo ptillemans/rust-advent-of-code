@@ -134,6 +134,7 @@ pub fn load_north(platform: &[Vec<char>]) -> u64 {
 
     let mut score: u64 = 0;
     for c in 0..width {
+        #[allow(clippy::needless_range_loop)]
         for r in 0..height {
             if platform[r][c] == 'O' {
                 let load = (height - r) as u64;
