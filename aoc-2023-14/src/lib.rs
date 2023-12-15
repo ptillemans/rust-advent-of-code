@@ -1,4 +1,4 @@
-use std::{str::FromStr, collections::HashSet};
+use std::str::FromStr;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct InputModel {
@@ -23,7 +23,7 @@ impl FromStr for InputModel {
     }
 }
 
-pub fn slide_north(platform: &Vec<Vec<char>>) -> Vec<Vec<char>> {
+pub fn slide_north(platform: &[Vec<char>]) -> Vec<Vec<char>> {
     let width = platform[0].len();
     let height = platform.len();
 
@@ -49,7 +49,7 @@ pub fn slide_north(platform: &Vec<Vec<char>>) -> Vec<Vec<char>> {
     new_platform
 }
 
-pub fn slide_east(platform: &Vec<Vec<char>>) -> Vec<Vec<char>> {
+pub fn slide_east(platform: &[Vec<char>]) -> Vec<Vec<char>> {
     let width = platform[0].len();
     let height = platform.len();
 
@@ -67,9 +67,7 @@ pub fn slide_east(platform: &Vec<Vec<char>>) -> Vec<Vec<char>> {
                 'O' => {
                     new_platform[r][c] = '.';
                     new_platform[r][stop_col] = 'O';
-                    if stop_col > 0 {
-                        stop_col -= 1;
-                    }
+                    stop_col = stop_col.saturating_sub(1);
                 }
                 x => new_platform[r][c] = x,
             }
@@ -78,7 +76,7 @@ pub fn slide_east(platform: &Vec<Vec<char>>) -> Vec<Vec<char>> {
     new_platform
 }
 
-pub fn slide_south(platform: &Vec<Vec<char>>) -> Vec<Vec<char>> {
+pub fn slide_south(platform: &[Vec<char>]) -> Vec<Vec<char>> {
     let width = platform[0].len();
     let height = platform.len();
 
@@ -96,9 +94,7 @@ pub fn slide_south(platform: &Vec<Vec<char>>) -> Vec<Vec<char>> {
                 'O' => {
                     new_platform[r][c] = '.';
                     new_platform[stop_height][c] = 'O';
-                    if stop_height > 0 {
-                        stop_height -= 1
-                    }
+                    stop_height = stop_height.saturating_sub(1);
                 }
                 x => new_platform[r][c] = x,
             }
@@ -107,7 +103,7 @@ pub fn slide_south(platform: &Vec<Vec<char>>) -> Vec<Vec<char>> {
     new_platform
 }
 
-pub fn slide_west(platform: &Vec<Vec<char>>) -> Vec<Vec<char>> {
+pub fn slide_west(platform: &[Vec<char>]) -> Vec<Vec<char>> {
     let width = platform[0].len();
     let height = platform.len();
 
@@ -132,44 +128,39 @@ pub fn slide_west(platform: &Vec<Vec<char>>) -> Vec<Vec<char>> {
     }
     new_platform
 }
-pub fn load_north(platform: &Vec<Vec<char>>) -> u64 {
+pub fn load_north(platform: &[Vec<char>]) -> u64 {
     let width = platform[0].len();
     let height = platform.len();
 
     let mut score: u64 = 0;
     for c in 0..width {
         for r in 0..height {
-            match platform[r][c] {
-                'O' => {
-                    let load = (height - r) as u64;
-
-                    score += load;
-                }
-                _ => {}
+            if platform[r][c] == 'O' {
+                let load = (height - r) as u64;
+                score += load;
             }
         }
     }
     score
 }
 
-pub fn spin_cycle(platform: &Vec<Vec<char>>) -> Vec<Vec<char>> {
-    let platform = slide_north(&platform);
+pub fn spin_cycle(platform: &[Vec<char>]) -> Vec<Vec<char>> {
+    let platform = slide_north(platform);
     let platform = slide_west(&platform);
     let platform = slide_south(&platform);
-    let platform = slide_east(&platform);
-    platform
+    slide_east(&platform)
 }
 
-pub fn print_platform(platform: &Vec<Vec<char>>) {
+pub fn print_platform(platform: &[Vec<char>]) {
     for line in platform {
         println!("{}", line.iter().collect::<String>());
     }
     println!("=====");
 }
 
-pub fn spin_load(platform: &Vec<Vec<char>>, n: usize) -> u64 {
+pub fn spin_load(platform: &[Vec<char>], n: usize) -> u64 {
     let mut platforms = Vec::with_capacity(10000);
-    let mut platform = platform.clone();
+    let mut platform = platform.to_vec();
 
     while !platforms.contains(&platform) {
         platforms.push(platform.clone());
@@ -180,7 +171,7 @@ pub fn spin_load(platform: &Vec<Vec<char>>, n: usize) -> u64 {
     let cycle_len = platforms.len() - start;
 
     let p_n = start + (n - start) % cycle_len;
-    load_north(&platforms[p_n as usize])
+    load_north(&platforms[p_n])
 }
 
 #[cfg(test)]
@@ -243,9 +234,6 @@ O..#.OO...
 #.OOO#...O",
     ];
 
-    pub fn input_data() -> InputModel {
-        TEST_INPUT.parse::<InputModel>().unwrap()
-    }
     #[test]
     fn test_from_str() {
         let input = "#.\n#O\n";
