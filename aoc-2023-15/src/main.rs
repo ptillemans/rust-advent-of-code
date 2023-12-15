@@ -1,5 +1,5 @@
 #![feature(test)]
-use aoc_2023_15::{AocError, InputModel, hash, parse_instruction, execute, focussing_power};
+use aoc_2023_15::{AocError, InputModel, hash, execute, focussing_power};
 
 const INPUT: &str = include_str!("../data/input.txt");
 
