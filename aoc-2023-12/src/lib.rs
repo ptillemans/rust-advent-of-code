@@ -84,6 +84,61 @@ fn skip_operational(s: &str) -> &str {
     s.trim_start_matches('.')
 }
 
+pub fn count_arrangements_nfa(s: &str, blocks: &[u64]) -> u64 {
+
+    let s = s.chars().collect::<Vec<_>>();
+
+    #[derive(Hash, Eq, PartialEq, Copy, Clone, Debug)]
+    struct State {
+        si: usize,
+        bi: usize,
+        bc: usize,
+        expect_dot: bool,
+    }
+    let mut cstates: HashMap<State,u64> = HashMap::new();
+    let mut nstates: HashMap<State,u64> = HashMap::new();
+    cstates.insert(State { si: 0, bi: 0, bc: 0, expect_dot: false }, 1);
+    let mut pos = 0;
+    loop {
+        
+        for (state, count) in &cstates {
+            let si = state.si;
+            let bi = state.bi;
+            let mut bc = state.bc;
+            let expect_dot = state.expect_dot;
+         
+            if state.si == s.len() {
+                if state.bi == blocks.len() {
+                    pos += count;
+                }
+                continue;
+            }
+            if (s[si] == '#' || s[si] == '?') &&  bi < blocks.len() && !expect_dot {
+                if s[si] == '?' && bc == 0  {
+                    let v =nstates.entry(State { si: si + 1, bi: bi, bc: bc, expect_dot: false }).or_insert(0);
+                    *v += count;
+                }
+                bc += 1;
+                if bc == blocks[bi] as usize {
+                    let v = nstates.entry(State { si: si + 1, bi: bi + 1, bc: 0, expect_dot: true }).or_insert(0);
+                    *v += count;
+                } else {
+                    let v = nstates.entry(State { si: si + 1, bi: bi, bc: bc, expect_dot: false }).or_insert(0);
+                    *v += count;
+                }
+            } else if (s[state.si] == '.' || s[state.si] == '?') && bc == 0 {
+                let v = nstates.entry(State { si: si + 1, bi: bi, bc: bc, expect_dot: false }).or_insert(0);
+                *v += count;
+            }
+        }
+        (cstates, nstates) = (nstates, cstates);
+        nstates.clear();
+        if cstates.is_empty() {
+            break;
+        }
+    }
+    pos
+}
 pub fn count_arrangements(s: &str, blocks: &[u64]) -> u64 {
     let mut memo = HashMap::new();
     step(skip_operational(s), blocks, &mut memo)
@@ -158,6 +213,23 @@ mod tests {
         for i in 0..lines.len() {
             assert_eq!(
                 count_arrangements(&lines[i].0, &lines[i].1),
+                expected[i],
+                "i: {}",
+                i
+            );
+        }
+    }
+
+
+    #[test]
+    fn test_test_count_arrangements_nfa() {
+        let input = TEST_INPUT.parse::<InputModel>().unwrap();
+        let lines = input.lines;
+        let expected = vec![1, 4, 1, 1, 4, 10];
+
+        for i in 0..lines.len() {
+            assert_eq!(
+                count_arrangements_nfa(&lines[i].0, &lines[i].1),
                 expected[i],
                 "i: {}",
                 i

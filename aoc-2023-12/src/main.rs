@@ -1,7 +1,7 @@
 #![feature(test)]
 use std::iter::repeat;
 
-use aoc_2023_12::{count_arrangements, AocError, InputModel};
+use aoc_2023_12::{count_arrangements, AocError, InputModel, count_arrangements_nfa};
 use rayon::prelude::*;
 
 const INPUT: &str = include_str!("../data/input.txt");
@@ -37,6 +37,28 @@ fn part2(input: &InputModel) -> Result<String, AocError> {
         .to_string())
 }
 
+fn part2_nfa(input: &InputModel) -> Result<String, AocError> {
+    Ok(input.lines
+        .par_iter()
+        .map(|(line, blocks)| {
+            (
+                repeat(line)
+                    .take(5)
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join("?"),
+                repeat(blocks)
+                    .take(5)
+                    .flatten()
+                    .cloned()
+                    .collect::<Vec<_>>(),
+            )
+        })
+        .map(|(line, blocks)| count_arrangements_nfa(&line, &blocks))
+        .sum::<u64>()
+        .to_string())
+}
+
 fn main() -> Result<(), AocError> {
     let input: InputModel = INPUT.parse::<InputModel>()?;
     let part1_result = part1(&input)?;
@@ -44,6 +66,8 @@ fn main() -> Result<(), AocError> {
     println!("--------------");
     let part2_result = part2(&input)?;
     println!("Part2: {}", part2_result);
+    let part2_result = part2_nfa(&input)?;
+    println!("Part2 NFA: {}", part2_result);
     Ok(())
 }
 
@@ -103,5 +127,11 @@ mod tests {
     fn bench_part2(b: &mut Bencher) {
         let data = INPUT.parse::<InputModel>().unwrap();
         b.iter(|| part2(&data))
+    }
+
+    #[bench]
+    fn bench_part2_nfa(b: &mut Bencher) {
+        let data = INPUT.parse::<InputModel>().unwrap();
+        b.iter(|| part2_nfa(&data))
     }
 }
