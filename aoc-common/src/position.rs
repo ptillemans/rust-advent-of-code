@@ -1,4 +1,4 @@
-use std::ops::Add;
+use std::{ops::{Add, Sub}, fmt::{Display, Formatter}};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub struct Position {
@@ -14,6 +14,14 @@ impl Add for Position {
     }
 }   
 
+impl Sub for Position {
+    type Output = Position;
+
+    fn sub(self, other: Position) -> Position {
+        (self.x - other.x, self.y - other.y).into()
+    }
+}
+
 impl <T> From<(T, T)> for Position
     where T: Into<i32> {
     fn from((x, y): (T, T)) -> Self {
@@ -26,6 +34,13 @@ impl From<Position> for (i32, i32) {
         (position.x, position.y)
     }
 }
+
+impl Display for Position {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
 
 impl Position {
 
