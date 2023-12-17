@@ -1,9 +1,14 @@
-use std::{ops::{Add, Sub}, fmt::{Display, Formatter}};
+use std::{
+    fmt::{Display, Formatter},
+    ops::{Add, Sub},
+};
+
+use crate::direction::Direction;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub struct Position {
-    pub x: i32, 
-    pub y: i32
+    pub x: i32,
+    pub y: i32,
 }
 
 impl Add for Position {
@@ -12,7 +17,7 @@ impl Add for Position {
     fn add(self, other: Position) -> Position {
         (self.x + other.x, self.y + other.y).into()
     }
-}   
+}
 
 impl Sub for Position {
     type Output = Position;
@@ -22,10 +27,15 @@ impl Sub for Position {
     }
 }
 
-impl <T> From<(T, T)> for Position
-    where T: Into<i32> {
+impl<T> From<(T, T)> for Position
+where
+    T: Into<i32>,
+{
     fn from((x, y): (T, T)) -> Self {
-        Position { x: x.into(), y: y.into() }
+        Position {
+            x: x.into(),
+            y: y.into(),
+        }
     }
 }
 
@@ -35,15 +45,35 @@ impl From<Position> for (i32, i32) {
     }
 }
 
+impl From<&Direction> for Position {
+    fn from(val: &Direction) -> Self {
+        match val {
+            Direction::North => Position::new(0, -1),
+            Direction::East => Position::new(1, 0),
+            Direction::South => Position::new(0, 1),
+            Direction::West => Position::new(-1, 0),
+        }
+    }
+}
+
+impl From<Direction> for Position {
+    fn from(val: Direction) -> Position {
+        match val {
+            Direction::North => Position::new(0, -1),
+            Direction::East => Position::new(1, 0),
+            Direction::South => Position::new(0, 1),
+            Direction::West => Position::new(-1, 0),
+        }
+    }
+}
+
 impl Display for Position {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(f, "({}, {})", self.x, self.y)
     }
 }
 
-
 impl Position {
-
     pub fn new(x: i32, y: i32) -> Position {
         Position { x, y }
     }
@@ -60,8 +90,8 @@ impl Position {
 
     // calculate the euclidean distance between two positions
     pub fn distance(&self, other: &Position) -> f32 {
-        ((self.x as f32 - other.x as f32).powf(2.0) 
-            + (self.y as f32 - other.y as f32).powf(2.0)).sqrt()
+        ((self.x as f32 - other.x as f32).powf(2.0) + (self.y as f32 - other.y as f32).powf(2.0))
+            .sqrt()
     }
 
 }
@@ -70,7 +100,6 @@ impl Position {
 mod tests {
 
     use super::*;
-
 
     #[test]
     fn test_add() {
@@ -86,7 +115,7 @@ mod tests {
         let expected = Position { x: 1, y: 2 };
 
         assert_eq!(actual, expected);
-    }  
+    }
 
     #[test]
     fn test_into_usize() {

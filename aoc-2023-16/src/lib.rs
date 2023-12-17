@@ -213,6 +213,28 @@ pub enum Direction {
     West,
 }
 
+impl From<&Direction> for Position {
+    fn from(val: &Direction) -> Self {
+        match val {
+            Direction::North => Position::new(0, -1),
+            Direction::East => Position::new(1, 0),
+            Direction::South => Position::new(0, 1),
+            Direction::West => Position::new(-1, 0),
+        }
+    }
+}
+
+impl From<Direction> for Position {
+    fn from(val: Direction) -> Position {
+        match val  {
+            Direction::North => Position::new(0, -1),
+            Direction::East => Position::new(1, 0),
+            Direction::South => Position::new(0, 1),
+            Direction::West => Position::new(-1, 0),
+        }
+    }
+}
+
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub struct Beam {
@@ -238,28 +260,6 @@ impl Beam {
         (0..=len)
             .map(|i| self.start + Position::new(unit_delta.0 * i, unit_delta.1 * i))
             .collect()
-    }
-}
-
-impl From<&Direction> for Position {
-    fn from(val: &Direction) -> Self {
-        match val {
-            Direction::North => Position::new(0, -1),
-            Direction::East => Position::new(1, 0),
-            Direction::South => Position::new(0, 1),
-            Direction::West => Position::new(-1, 0),
-        }
-    }
-}
-
-impl From<Direction> for Position {
-    fn from(val: Direction) -> Position {
-        match val  {
-            Direction::North => Position::new(0, -1),
-            Direction::East => Position::new(1, 0),
-            Direction::South => Position::new(0, 1),
-            Direction::West => Position::new(-1, 0),
-        }
     }
 }
 
