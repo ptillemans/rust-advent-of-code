@@ -5,16 +5,10 @@ use std::{
 
 use crate::direction::Direction;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+#[derive(Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub struct Position {
     pub x: i32,
     pub y: i32,
-}
-
-impl Default for Position {
-    fn default() -> Self {
-        Position { x: 0, y: 0 }
-    }
 }
 
 impl Add for Position {
