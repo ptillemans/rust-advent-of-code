@@ -11,6 +11,12 @@ pub struct Position {
     pub y: i32,
 }
 
+impl Default for Position {
+    fn default() -> Self {
+        Position { x: 0, y: 0 }
+    }
+}
+
 impl Add for Position {
     type Output = Position;
 

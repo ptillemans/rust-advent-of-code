@@ -1,19 +1,23 @@
 #![feature(test)]
-use aoc_2023_17::{find_path, AocError, InputModel};
-use aoc_common::direction::Direction;
+use aoc_2023_18::{AocError, InputModel, dig, area};
 
 const INPUT: &str = include_str!("../data/input.txt");
 
-fn part1(input: &InputModel) -> Result<String, AocError> {
-    find_path(&input.city, 1, 3).map(|heat| heat.to_string())
+
+fn part1(input: &InputModel) -> Result<String,AocError> {
+    let segments = dig(&input.instructions);
+    let area = area(&segments);
+    return Ok(area.to_string())
 }
 
 fn part2(input: &InputModel) -> Result<String, AocError> {
-    find_path(&input.city, 4, 10).map(|heat| heat.to_string())
+    let segments = dig(&input.instructions2);
+    let area = area(&segments);
+    return Ok(area.to_string())
 }
 
 fn main() -> Result<(), AocError> {
-    let input: InputModel = INPUT.parse::<InputModel>()?;
+    let input:InputModel = INPUT.parse::<InputModel>()?;
     let part1_result = part1(&input)?;
     println!("Part1: {}", part1_result);
     println!("--------------");
@@ -26,27 +30,25 @@ fn main() -> Result<(), AocError> {
 mod tests {
     extern crate test;
     use super::*;
-    use aoc_2023_17::City;
     use test::Bencher;
 
-    const TEST_INPUT: &str = "2413432311323
-3215453535623
-3255245654254
-3446585845452
-4546657867536
-1438598798454
-4457876987766
-3637877979653
-4654967986887
-4564679986453
-1224686865563
-2546548887735
-4322674655533
-";
+    const TEST_INPUT: &str = "R 6 (#70c710)
+D 5 (#0dc571)
+L 2 (#5713f0)
+D 2 (#d2c081)
+R 2 (#59c680)
+D 2 (#411b91)
+L 5 (#8ceee2)
+U 2 (#caa173)
+L 1 (#1b58a2)
+U 2 (#caa171)
+R 2 (#7807d2)
+U 3 (#a77fa3)
+L 2 (#015232)
+U 2 (#7a21e3)";
 
     pub fn input_data() -> InputModel {
-        let city = TEST_INPUT.parse::<City>().unwrap();
-        InputModel { city }
+        TEST_INPUT.parse::<InputModel>().unwrap()
     }
 
     #[test]
@@ -60,7 +62,7 @@ mod tests {
     #[test]
     fn test_part1() {
         let actual = part1(&input_data()).unwrap();
-        let expected = "102";
+        let expected = "62";
 
         assert_eq!(actual, expected);
     }
@@ -68,11 +70,11 @@ mod tests {
     #[test]
     fn test_part2() {
         let actual = part2(&input_data()).unwrap();
-        let expected = "94";
+        let expected = "952408144115";
 
         assert_eq!(actual, expected);
     }
-
+    
     #[bench]
     fn bench_parse(b: &mut Bencher) {
         b.iter(|| INPUT.parse::<InputModel>().unwrap())
@@ -89,4 +91,5 @@ mod tests {
         let data = INPUT.parse::<InputModel>().unwrap();
         b.iter(|| part2(&data))
     }
+
 }

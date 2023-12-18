@@ -34,66 +34,43 @@ impl FromStr for InputModel {
     }
 }
 
-pub type Heat = u32;
+pub type Heat = i32;
 pub type City = Grid<Heat>;
 
 const MAX_CONSECUTIVE_MOVES: usize = 3;
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 struct Node {
     position: Position,
     previous: Direction,
 }
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
-pub struct State {
-    heat: Heat,
-    position: Position,
-    previous: Direction,
-}
-
-impl Ord for State {
-    fn cmp(&self, other: &Self) -> Ordering {
-        other
-            .heat
-            .cmp(&self.heat) // less heat is better
-            .then_with(|| self.position.cmp(&other.position)) // closer is better
-    }
-}
-
-impl PartialOrd for State {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Into<Node> for State {
-    fn into(self) -> Node {
-        Node {
-            position: self.position,
-            previous: self.previous,
-        }
-    }
-}
-
-pub fn next_moves(grid: &City, current: &State, min_steps: usize, max_steps: usize) -> BinaryHeap<State> {
+pub fn next_moves(
+    grid: &City,
+    current: &Node,
+    current_heat: Heat,
+    min_steps: usize,
+    max_steps: usize,
+) -> BinaryHeap<(Heat, Node)> {
     Direction::iter()
         .filter(|&dir| dir != current.previous && dir != current.previous.inverse())
         .flat_map(move |dir| {
             (1..=max_steps)
                 .map(move |i| (i, dir.steps(current.position, i).clone()))
                 .filter_map(|(i, p)| grid.get(p).map(|h| (i, p, h)))
-                .scan(current.heat, move |heat, (i, position, h)| {
-                    *heat += h;
-                    Some((i,
-                          State {
-                        heat: *heat,
-                        position,
-                        previous: dir.clone(),
-                    }))
+                .scan(current_heat, move |heat, (i, position, h)| {
+                    *heat -= h; // use negative heat to allow use of BinaryHeap as prioQ
+                    Some((
+                        i,
+                        *heat,
+                        Node {
+                            position,
+                            previous: dir.clone(),
+                        },
+                    ))
                 })
-                .filter(|(i, _)| *i >= min_steps)
-                .map(|(_, state)| state)
+                .filter(|(i, _, _)| *i >= min_steps)
+                .map(|(_, heat, state)| (heat, state))
                 .collect::<Vec<_>>()
         })
         .collect()
@@ -104,53 +81,48 @@ pub fn find_path(grid: &City, min_steps: usize, max_steps: usize) -> Result<Heat
     let end: Position = (grid.width() as i32 - 1, grid.height() as i32 - 1).into();
 
     let mut best = HashMap::<Node, Heat>::with_capacity(10000);
-    let mut queue = BinaryHeap::<State>::with_capacity(10000);
-    queue.append(&mut next_moves(
-        grid,
-        &State {
-            heat: 0,
+    let mut queue = BinaryHeap::<(Heat, Node)>::with_capacity(10000);
+    let next_states =
+        |current: &Node, current_heat| next_moves(grid, current, current_heat, min_steps, max_steps);
+
+    queue.append(&mut next_states(
+        &Node {
             position: start,
             previous: Direction::East,
         },
-        min_steps, max_steps
+        0,
     ));
-    queue.append(&mut next_moves(
-        grid,
-        &State {
-            heat: 0,
+    queue.append(&mut next_states(
+        &Node {
             position: start,
             previous: Direction::South,
         },
-        min_steps, max_steps
+        0,
     ));
 
-    while let Some(state) = queue.pop() {
-        if state.position == end {
-            return Ok(state.heat);
+    while let Some((heat, node))= queue.pop() {
+        if node.position == end {
+            return Ok(-heat);
         }
 
-        let node = state.into();
         if let Some(&best_heat) = best.get(&node) {
-            if best_heat < state.heat {
+            if best_heat > heat {
                 continue;
             }
         }
 
-        next_moves(grid, &state, min_steps, max_steps)
-            .iter()
-            .for_each(|&next| {
-                let next_node = next.into();
-                let est_heat = next.heat + next.position.manhattan(&end) as u32;
-                if let Some(&best_est_heat) = best.get(&next_node) {
-                    if best_est_heat > est_heat {
-                        best.insert(next_node, est_heat);
-                        queue.push(next);
-                    }
-                } else {
-                    best.insert(next_node, est_heat);
-                    queue.push(next);
+        next_states(&node, heat).iter().for_each(|(heat, next)| {
+            let est_heat = *heat - next.position.manhattan(&end) as Heat;
+            if let Some(&best_est_heat) = best.get(next) {
+                if best_est_heat < est_heat {
+                    best.insert(*next, est_heat);
+                    queue.push((*heat, *next));
                 }
-            });
+            } else {
+                best.insert(*next, est_heat);
+                queue.push((*heat, *next));
+            }
+        });
     }
     Err(AocError::NoSolution)
 }
@@ -183,14 +155,13 @@ mod tests {
     #[test]
     fn test_next_moves() {
         let city = input_data().city;
-        let current = State {
-            heat: 0,
+        let current = Node {
             position: Position::new(0, 0),
             previous: Direction::East,
         };
-        let next = next_moves(&city, &current, 1, 3)
+        let next = next_moves(&city, &current, 0, 1, 3)
             .iter()
-            .map(|s| (s.position, s.heat))
+            .map(|(heat, node)| (node.position, -*heat))
             .collect::<Vec<_>>();
         println!("{:?}", next);
         assert!(next.contains(&(Position::new(0, 1), 3)));
@@ -198,28 +169,26 @@ mod tests {
         assert!(next.contains(&(Position::new(0, 3), 9)));
         assert_eq!(next.len(), 3);
 
-        let current = State {
-            heat: 0,
+        let current = Node {
             position: Position::new(0, 0),
             previous: Direction::South,
         };
-        let next = next_moves(&city, &current, 1, 3)
+        let next = next_moves(&city, &current, 0, 1, 3)
             .iter()
-            .map(|s| (s.position, s.heat))
+            .map(|(heat, node)| (node.position, -*heat))
             .collect::<Vec<_>>();
         assert!(next.contains(&(Position::new(1, 0), 4)));
         assert!(next.contains(&(Position::new(2, 0), 5)));
         assert!(next.contains(&(Position::new(3, 0), 8)));
         assert_eq!(next.len(), 3);
 
-        let current = State {
-            heat: 0,
+        let current = Node {
             position: Position::new(4, 7),
             previous: Direction::East,
         };
-        let next = next_moves(&city, &current, 1, 3)
+        let next = next_moves(&city, &current, 0, 1, 3)
             .iter()
-            .map(|s| (s.position, s.heat))
+            .map(|(heat, node)| (node.position, -*heat))
             .collect::<Vec<_>>();
 
         print!("{:?}", next);
