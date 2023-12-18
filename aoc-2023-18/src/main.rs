@@ -7,13 +7,13 @@ const INPUT: &str = include_str!("../data/input.txt");
 fn part1(input: &InputModel) -> Result<String,AocError> {
     let segments = dig(&input.instructions);
     let area = area(&segments);
-    return Ok(area.to_string())
+    Ok(area.to_string())
 }
 
 fn part2(input: &InputModel) -> Result<String, AocError> {
     let segments = dig(&input.instructions2);
     let area = area(&segments);
-    return Ok(area.to_string())
+    Ok(area.to_string())
 }
 
 fn main() -> Result<(), AocError> {
