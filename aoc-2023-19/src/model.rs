@@ -93,12 +93,6 @@ impl Workflow {
         actions
     }
 
-    fn new(arg: &str, vec: Vec<Expression>) -> Self {
-        Self {
-            name: arg.to_string(),
-            rules: vec,
-        }
-    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -295,6 +289,10 @@ impl Workflows {
         self.0.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
     pub fn evaluate(&self, part: &Part) -> Result<Action, AocError> {
         let mut current = self.get("in")?;
         loop {
@@ -359,9 +357,9 @@ mod tests {
     fn test_workflow_part_range() {
         let pr = PartRange::default();
 
-        let workflow = Workflow::new(
-            "in",
-            vec![
+        let workflow = Workflow {
+            name: "in".to_string(),
+            rules: vec![
                 Expression::Condition(
                     Term::Property(Property::Shiny),
                     Operator::LT,
@@ -370,7 +368,7 @@ mod tests {
                 ),
                 Expression::Action(Action::Jump("qqz".to_string())),
             ],
-        );
+        };
 
         let actual = workflow.evaluate_range(&pr);
 
