@@ -355,6 +355,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "aoc-2023-19"
+version = "0.1.0"
+dependencies = [
+ "either",
+ "rayon",
+ "thiserror",
+ "winnow",
+]
+
+[[package]]
 name = "aoc-2023-2"
 version = "0.1.0"
 dependencies = [
