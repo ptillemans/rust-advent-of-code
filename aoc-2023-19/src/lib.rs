@@ -70,7 +70,7 @@ hdj{m>838:A,pv}
     #[test]
     fn test_apply_workflow() {
         let input: InputModel = TEST_INPUT.parse().unwrap();
-        let part = input.parts[0].clone();
+        let part = input.parts[0];
         let workflow = input.workflows.get("in").unwrap();
         let actual = workflow.evaluate(&part);
         assert_eq!(Some(Action::Jump("qqz".to_string())), actual);
@@ -79,7 +79,7 @@ hdj{m>838:A,pv}
     #[test]
     fn test_apply_workflows() {
         let input: InputModel = TEST_INPUT.parse().unwrap();
-        let part = input.parts[0].clone();
+        let part = input.parts[0];
         let actual = &input.workflows.evaluate(&part).unwrap();
         assert_eq!(Action::Accepted, *actual);
     }
@@ -87,7 +87,7 @@ hdj{m>838:A,pv}
     #[test]
     fn test_part_rating() {
         let input: InputModel = TEST_INPUT.parse().unwrap();
-        let part = input.parts[0].clone();
+        let part = input.parts[0];
         let actual = part.rating();
         assert_eq!(actual, 7540);
     }

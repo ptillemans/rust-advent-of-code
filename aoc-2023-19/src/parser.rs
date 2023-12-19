@@ -40,7 +40,7 @@ fn expression(s: &mut &str) -> PResult<Expression> {
             action,
         )
             .map(|(t1, op, t2, _, action)| Expression::Condition(t1, op, t2, action)),
-        action.map(|a| Expression::Action(a)),
+        action.map(Expression::Action),
     ))
     .context(StrContext::Label("expression"))
     .parse_next(s)
