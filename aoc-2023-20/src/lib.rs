@@ -34,15 +34,15 @@ impl Module {
 
     fn step(&self, pulse: &Pulse) -> (Module, Option<bool>) {
         match self {
-            Module::Broadcaster(name) => (self.clone(), Some(pulse.is_high())),
-            Module::FlipFlop(name, state) => match pulse {
+            Module::Broadcaster(_) => (self.clone(), Some(pulse.is_high())),
+            Module::FlipFlop(_, state) => match pulse {
                 Pulse::High(_, _) => (self.clone(), None),
                 Pulse::Low(_, _) => (Module::FlipFlop(self.name(), !state), Some(!state)),
             },
             Module::Conjunction(_, inputs) => {
                 let mut new_inputs = inputs.clone();
                 new_inputs.insert(pulse.from(), pulse.is_high());
-                let all_high = new_inputs.values().all(|v| *v).clone();
+                let all_high = new_inputs.values().all(|v| *v);
                 let new_module = Module::Conjunction(self.name(), new_inputs);
                 (new_module, Some(!all_high))
             }
@@ -138,7 +138,6 @@ impl Circuit {
 
         states.iter()
             .map(|(k, samples)| {
-                println!("searching cycles in {}", k);
                 (k.clone(), cycle_detection(samples))
             })
             .collect()
@@ -147,25 +146,20 @@ impl Circuit {
 
 fn cycle_detection(samples: &[u64]) -> (usize, usize) {
     // assume the halfway point is in a cycle
-    println!("samples: {:?}", &samples[samples.len()/2..samples.len()/2 + 32]);
     let half_way = samples[samples.len()/2];
     let cycle = (samples.len()/2+16..samples.len())
         .filter(|&i| samples[i] == half_way)   // find candidates
-        .filter(|&i| {
+        .find(|&i| {
             let len = i - samples.len()/2;
             (0..len).all(|j| samples[i+j] == samples[i + j + len])
         })
-        .next()
         .unwrap();
     let len = cycle - samples.len()/2;
-    println!("len: {}", len);
 
     let first = (0..)
-        .filter(|&i| (0..cycle).all(|j| samples[i+j] == samples[i + j + len]))
-        .next()
+        .find(|&i| (0..cycle).all(|j| samples[i+j] == samples[i + j + len]))
         .unwrap();
 
-    println!("first: {}", first);
     (first, len)
 }
 
@@ -220,11 +214,8 @@ impl FromStr for InputModel {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let lines = s.lines().map(parse_line).collect::<Result<Vec<_>, _>>()?;
 
-        let mut modules = lines
-            .iter()
-            .map(|comp| comp)
-            .cloned()
-            .map(|(module, _)| (module.name(), module))
+        let mut modules = lines.iter()
+            .map(|(module, _)| (module.name(), module.clone()))
             .collect::<HashMap<_, _>>();
 
         let mut connections: HashMap<String, Vec<String>> = HashMap::new();
@@ -253,20 +244,16 @@ impl FromStr for InputModel {
 }
 
 fn parse_line(s: &str) -> Result<(Module, Vec<(String, String)>), AocError> {
-    println!("Parsing line: {}", s);
     let mut tokens = s.split(" -> ");
     let first = tokens.next().ok_or(AocError::ParseError)?;
     let second = tokens.next().ok_or(AocError::ParseError)?;
 
-    let comp = if first.starts_with("%") {
-        let name = first[1..].to_string();
-        Module::FlipFlop(name, false)
-    } else if first.starts_with("&") {
-        let name = first[1..].to_string();
-        Module::Conjunction(name, BTreeMap::new())
+    let comp = if let Some(name) = first.strip_prefix('%') {
+        Module::FlipFlop(name.to_string(), false)
+    } else if let Some(name) = first.strip_prefix('&') {
+        Module::Conjunction(name.to_string(), BTreeMap::new())
     } else {
-        let name = first.to_string();
-        Module::Broadcaster(name)
+        Module::Broadcaster(first.to_string())
     };
 
     let connections = second

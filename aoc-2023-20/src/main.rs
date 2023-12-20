@@ -19,33 +19,25 @@ fn part1(input: &InputModel) -> Result<String, AocError> {
         .filter(|&x| matches!(x, Pulse::Low(_, _)))
         .count();
     let result = high_count * low_count;
-    return Ok(result.to_string());
+    Ok(result.to_string())
 }
 
 fn part2(input: &InputModel) -> Result<String, AocError> {
     let mut circuit = input.circuit.clone();
     let cycles = circuit.find_cycles();
-    println!("cycles: {:?}", cycles);
 
     let inputs_rx = circuit.inputs("rx");
-    println!("inputs_rx {:?}",inputs_rx);
 
     let inputs_trigger = inputs_rx.iter()
         .flat_map(|s| circuit.inputs(s))
         .flat_map(|s| circuit.inputs(&s))
         .collect::<Vec<String>>();
-    println!("inputs_trigger {:?}",inputs_trigger);
 
-    for s in &inputs_trigger {
-        println!("cycle {} -> {:?}" , s , cycles.get(s))
-    }
 
     let lens:Vec<usize> = inputs_trigger.into_iter()
         .filter_map(|s| cycles.get(&s))
         .map(|(_, l)| *l)
         .collect();
-
-    println!("lens: {:?}", lens);
 
     let big_cycle: u64 = lens.into_iter()
         .map(|s| s as u64)
