@@ -40,6 +40,7 @@ fn main() -> Result<(), AocError> {
 mod tests {
     extern crate test;
     use super::*;
+    use aoc_2023_7::Hand;
     use test::Bencher;
 
     const TEST_INPUT: &str = "32T3K 765
