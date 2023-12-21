@@ -36,6 +36,15 @@ impl<T> Grid<T> {
             None
         }
     }
+
+    pub fn set(&mut self, index: Position, cell: T) -> Option<()> {
+        if self.in_bounds(index) {
+            self.0[index.y as usize][index.x as usize] = cell;
+            Some(())
+        } else {
+            None
+        }
+    }
 }
 
 impl<T: FromStr> FromStr for Grid<T> {

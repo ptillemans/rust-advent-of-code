@@ -94,6 +94,15 @@ impl Position {
             .sqrt()
     }
 
+    pub fn neighbors(&self) -> Vec<Position> {
+        vec![
+            *self + Position::new(0, -1),
+            *self + Position::new(1, 0),
+            *self + Position::new(0, 1),
+            *self + Position::new(-1, 0),
+        ]
+    }
+
 }
 
 #[cfg(test)]
