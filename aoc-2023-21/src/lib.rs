@@ -11,6 +11,8 @@ pub struct InputModel {
 pub enum AocError {
     #[error("Error parsing the input")]
     ParseError,
+    #[error("Found no solution")]
+    NoSolution,
 }
 
 impl FromStr for InputModel {
@@ -125,6 +127,53 @@ pub fn count_cis(garden: &Garden, start: Position, steps: usize) -> usize {
     current.len()
 }
 
+pub fn simulate_steps(garden: &Garden, start: Position, steps: usize) -> Vec<usize> {
+    let mut current = HashSet::new();
+    current.insert(start);
+
+    (0..steps)
+        .map(|i| {
+            if (i % 100) == 0 {
+                println!("step {}", i);
+            }
+            current = cyclic_reachable(garden, &current);
+            current.len()
+        })
+        .collect()
+}
+
+
+pub fn find_cycle(garden: &Garden, start: Position) -> Result<(Vec<(usize, i32, i32, i32)>, usize, usize), AocError> {
+    let sim = simulate_steps(garden, start, garden.width() * 20)
+        .into_iter()
+        .scan((0 as usize, 0 as i32, 0 as i32, 0 as i32), |state, l| {
+            let (ll, d1l, d2l, d3l) = *state;
+            let d1 = (l - ll) as i32;
+            let d2 = d1 - d1l;
+            let d3 = d2 - d2l;
+            *state = (l, d1, d2, d3);
+            Some(*state)
+        })
+        .collect::<Vec<_>>();
+    let l = sim.len();
+
+    println!("sim: {:?}", sim);
+
+    let cycle = (10..l/3)
+        .find(|&cycle| (0..cycle).all(|i| sim[i + cycle ].3 == sim[i + 2*cycle].3))
+        .ok_or(AocError::NoSolution)?;
+
+    // backtrack
+    let toofar = (0..cycle)
+        .find(|i| sim[cycle - i - 1].3 != sim[2*cycle - i - 1].3)
+        .ok_or(AocError::NoSolution)?;
+
+    let offset = cycle - toofar;
+    let sample = sim[0..offset + cycle].to_vec();
+    Ok((sample, cycle, offset))
+        
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -190,5 +239,16 @@ mod tests {
         // assert_eq!(reachable.len(), 668697);
         // let reachable = cyclic_in_steps(&input.garden, input.start,5000);
        // assert_eq!(reachable.len(), 16733044);
+    }
+
+    //[test]
+    fn test_find_cycle() {
+        let input = TEST_INPUT.parse::<InputModel>().unwrap();
+        let (samples, cycle, offset)= find_cycle(&input.garden, input.start).unwrap();
+
+        assert_eq!(samples.len(), cycle + offset);
+        assert_eq!(cycle, 11);
+        assert_eq!(offset, 10);
+        
     }
 }
