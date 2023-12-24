@@ -1,15 +1,17 @@
 #![feature(test)]
-use aoc_2023_23::{find_longest_path, AocError, InputModel};
+use aoc_2023_23::{find_longest_path, find_longest_path2, grid_to_graph, AocError, InputModel};
 
 const INPUT: &str = include_str!("../data/input.txt");
 
 fn part1(input: &InputModel) -> Result<String, AocError> {
-    let steps = find_longest_path(&input.grid, input.start, input.end);
-    return Ok(steps.to_string());
+    let steps = find_longest_path(&input.grid, &input.start);
+    Ok(steps.to_string())
 }
 
-fn part2(_input: &InputModel) -> Result<String, AocError> {
-    return Ok("Not implemented".to_string());
+fn part2(input: &InputModel) -> Result<String, AocError> {
+    let graph = grid_to_graph(&input.grid, &input.start);
+    let steps = find_longest_path2(&graph, &input.start, &input.end);
+    Ok(steps.to_string())
 }
 
 fn main() -> Result<(), AocError> {
@@ -75,7 +77,7 @@ mod tests {
     #[test]
     fn test_part2() {
         let actual = part2(&input_data()).unwrap();
-        let expected = "";
+        let expected = "154";
 
         assert_eq!(actual, expected);
     }
