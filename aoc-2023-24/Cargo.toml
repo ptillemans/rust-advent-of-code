@@ -7,4 +7,7 @@ edition = "2021"
 
 [dependencies]
 thiserror="*"
-itertools="*"
+nalgebra="*"
+nalgebra-lapack="*"
+argmin = { version = "0.8" }
+argmin-math = { version = "0.3", features = ["ndarray_latest-serde", "nalgebra_latest-serde"] }
