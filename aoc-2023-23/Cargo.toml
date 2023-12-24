@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 thiserror="*"
+itertools="*"
 aoc-common={path="../aoc-common/"}
