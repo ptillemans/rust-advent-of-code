@@ -1,5 +1,5 @@
 #![feature(test)]
-use aoc_2023_25::{find_most_used_edges, output_graphviz, AocError, InputModel, flood_fill, cut_graph};
+use aoc_2023_25::{output_graphviz, AocError, InputModel, mincut_stoer_wagner};
 
 const INPUT: &str = include_str!("../data/input.txt");
 
@@ -10,23 +10,28 @@ fn part1(input: &InputModel) -> Result<String, AocError> {
     //let edges = find_most_used_edges(&graph);
     //println!("Most used edges: {:?}", edges);
 
-    // cuts found with generated graphviz plot
-    let graph = cut_graph(&graph, "pxp", "nqq");
-    let graph = cut_graph(&graph, "dct", "kns");
-    let graph = cut_graph(&graph, "ksq", "jxb");
+    // use stoer_wagner to find min cut
+    let (n, partition) = mincut_stoer_wagner(&graph);
+    let f1 = partition.len();
+    let f2 = graph.len() - f1;
 
-    let f1 = flood_fill(&graph, "pxp").len();
-    let f2 = flood_fill(&graph, "nqq").len();
+    // cuts found with generated graphviz plot
+    //let graph = cut_graph(&graph, "pxp", "nqq");
+    //let graph = cut_graph(&graph, "dct", "kns");
+    //let graph = cut_graph(&graph, "ksq", "jxb");
+    //let f1 = flood_fill(&graph, "pxp").len();
+    //let f2 = flood_fill(&graph, "nqq").len();
 
     println!("f1: {:?}", f1);
     println!("f2: {:?}", f2);
 
+    
     let result = f1 * f2;
     return Ok(result.to_string());
 }
 
 fn part2(_input: &InputModel) -> Result<String, AocError> {
-    return Ok("Not implemented".to_string());
+    return Ok("".to_string());
 }
 
 fn main() -> Result<(), AocError> {
@@ -74,7 +79,7 @@ frs: qnr lhk lsr";
     #[test]
     fn test_part1() {
         let actual = part1(&input_data()).unwrap();
-        let expected = "";
+        let expected = "54";
 
         assert_eq!(actual, expected);
     }

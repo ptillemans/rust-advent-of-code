@@ -1,12 +1,12 @@
-use itertools::{iterate, sorted};
 use rand::Rng;
+use rustworkx_core::connectivity::stoer_wagner_min_cut;
+use rustworkx_core::petgraph::graph::UnGraph;
+use rustworkx_core::Result;
 
 use std::{
     collections::{HashMap, HashSet},
     fs::File,
-    io::Error,
     io::Write,
-    path::Path,
     str::FromStr,
 };
 
@@ -119,7 +119,7 @@ pub fn cut_graph(
     new_graph
 }
 
-pub fn output_graphviz(graph: &HashMap<String, Vec<String>>) -> Result<(), Error> {
+pub fn output_graphviz(graph: &HashMap<String, Vec<String>>) -> Result<(), std::io::Error> {
     let mut f = File::create("graph.dot")?;
     writeln!(f, "digraph {}", "{")?;
     for (n1, ns) in graph.iter() {
@@ -135,12 +135,11 @@ pub fn find_path(
     graph: &HashMap<String, Vec<String>>,
     start: &str,
     finish: &str,
-) -> Result<Vec<(String)>, AocError> {
+) -> Result<Vec<String>, AocError> {
     let start = start.to_string();
     let mut todo = vec![(start.clone(), vec![])];
     let mut seen: HashSet<String> = HashSet::new();
     while let Some((node, path)) = todo.pop() {
-        //println!("node: {}, todo: {}, path: {}", node, todo.len(), path.len()); 
         let mut path = path.clone();
         path.push(node.clone());
         seen.insert(node.clone());
@@ -202,6 +201,38 @@ pub fn find_most_used_edges(
 
     Ok(edges)
 }
+
+
+pub fn mincut_stoer_wagner(graph: &HashMap<String, Vec<String>>) -> (usize, Vec<String>) {
+
+    let edges = graph.into_iter()
+        .flat_map(|(k, v)| v.iter().map(|n| (k.clone(), n.clone())))
+        .filter(|(a, b)| a < b)
+        .to_owned()
+        .collect::<Vec<(String, String)>>();
+
+    let mut grf = UnGraph::<String, ()>::new_undirected();
+
+    let mut node_map = HashMap::new();
+    for node in graph.keys() {
+        node_map.insert(node.clone(), grf.add_node(node.clone()));
+    }
+
+    for (n1, n2) in edges {
+        let a = node_map.get(&n1).unwrap();
+        let b = node_map.get(&n2).unwrap();
+        grf.add_edge(*a, *b, ());
+    }
+
+    let min_cut_res: Result<Option<(usize, Vec<_>)>> = stoer_wagner_min_cut(&grf, |_| Ok(1));
+
+    let (min_cut, partition) = min_cut_res.unwrap().unwrap();
+    let nodes = partition.iter().map(|ix| grf[*ix].clone()).collect::<Vec<String>>();
+
+    (min_cut, nodes) 
+    
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -269,7 +300,7 @@ frs: qnr lhk lsr";
         );
     }
 
-    #[test]
+    //[test]
     fn test_most_used_edges() {
         let input: super::InputModel = TEST_INPUT.parse().unwrap();
         let graph = input.graph;
@@ -277,5 +308,15 @@ frs: qnr lhk lsr";
         assert!(actual.contains(&("hfx".to_string(), "pzl".to_string())));
         assert!(actual.contains(&("bvb".to_string(), "cmg".to_string())));
         assert!(actual.contains(&("jqt".to_string(), "nvd".to_string())));
+    }
+
+    #[test]
+    fn test_mincut_stoer_wagner() {
+        let input: super::InputModel = TEST_INPUT.parse().unwrap();
+        let graph = input.graph;
+        let (min_cut, part) = mincut_stoer_wagner(&graph);
+        println!("actual: {} {:?}", min_cut, part);
+        assert_eq!(min_cut, 3);
+        assert_eq!(part.len(), 6);
     }
 }
